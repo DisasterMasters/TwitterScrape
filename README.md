@@ -1,2 +1,3 @@
 # TwitterProject
-The tests of the Twitter Data Mining
+
+Repo for how things are working with the Twitter Research Project done with CURENT. 
