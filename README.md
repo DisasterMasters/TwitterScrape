@@ -1,6 +1,6 @@
 # Twitter Project
 
-Repo for how things are working with the Twitter Research Project done with CURENT. 
+Repo for Getting and Cleaning Tweets for UTK CURENT
 
 
 # Getting the Repo
