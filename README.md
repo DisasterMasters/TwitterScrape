@@ -15,7 +15,7 @@ For most purposes, "--querysearch" is all that's needed unless you want to focus
 
 Using Unix with Python installed. Once in the directory, open a terminal and input
 
-**python Exporter.py --COMMAND "USERNAME"
+**python Exporter.py --COMMAND "USERNAME"**
 
 This will gather and store all the tweets doing this. Several instances of this program can be run at the same time. 
 
