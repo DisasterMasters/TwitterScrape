@@ -14,7 +14,7 @@ def main(argv):
 
 	if len(argv) == 1 and argv[0] == '-h':
 		f = open('exporter_help_text.txt', 'r')
-		print f.read()
+		print (f.read())
 		f.close()
 
 		return
@@ -63,14 +63,15 @@ def main(argv):
 		print('Searching...\n')
 
 		def receiveBuffer(tweets):
-                    for t in tweets:
-			re.sub("http:// ","http://",t.text)
-			re.sub("https:// ","https://",t.text)
-			re.sub("\r"," ",t.text)
-			re.sub("\n"," ",t.text)
-			re.sub("|","__PIPE__",t.text)
 			for t in tweets:
-				outputFile.write(('\n%s|%s|%d|%d|"%s"|%s|%s|%s|"%s"|%s' % (t.username, t.date.strftime("%Y-%m-%d %H:%M"), t.retweets, t.favorites, t.text, t.geo, t.mentions, t.hashtags, t.id, t.permalink)))
+				text = t.text;			   
+				re.sub(r'http:// ',"http://",text)
+				re.sub(r'https:// ',"https://",text)
+				re.sub(r'[\r\n]'," ",text)
+				re.sub(r'|',"__PIPE__",text)
+				t.text = text;
+			for t in tweets:
+				outputFile.write(('\n%s|%s|%d|%d|%s|%s|%s|%s|%s|%s' % (t.username, t.date.strftime("%Y-%m-%d %H:%M"), t.retweets, t.favorites, t.text, t.geo, t.mentions, t.hashtags, t.id, t.permalink)))
 			outputFile.flush();
 			print('More %d saved on file...\n' % len(tweets))
 
