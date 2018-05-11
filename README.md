@@ -3,8 +3,9 @@
 Repo for Getting and Cleaning Tweets for UTK CURENT
 
 
-# Getting the Repo
+# Getting the Repo & Setting Up
 All you need to do is either clone it with Git or if you don't know Git, just download the zip file containing it all.
+Install **pyquery** for Python 2.7 using pip.
 
 # Getting Tweets
 In the #GetProg# Folder, you'll be using Exporter.py to handle the gathering of Tweets. 
