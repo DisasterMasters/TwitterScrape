@@ -21,6 +21,6 @@ Using Unix with Python installed. Once in the directory, open a terminal and inp
 This will gather and store all the tweets doing this. Several instances of this program can be run at the same time. 
 
 # Cleaning the Tweets
-In the Cleaning Folder, Main.py will filter by date, remove unicode errors, translate (if enabled), and combine all files into a single one.
+In the Cleaning Folder, **Main.py** will filter by date, remove unicode errors, translate (if enabled), and combine all files into a single one.
 
 This works by doing a bit of hopscotch between two folders thanks to Python's CSV module. All you need to do is update path1 and path2 inside the main file and it should work. Replacing the osdir path needs to be done as well. When tested this worked on cleaning and removing all unneccessary files. 
