@@ -64,14 +64,19 @@ def main(argv):
 
 		def receiveBuffer(tweets):
 			for t in tweets:
-				text = t.text;			   
-				re.sub(r'http:// ',"http://",text)
-				re.sub(r'https:// ',"https://",text)
-				re.sub(r'[\r\n]'," ",text)
-				re.sub(r'|',"__PIPE__",text)
+				#if isinstance(t.text, str): print("--BEGIN--\n"+t.text.decode("utf8")+"\n--END--\n")
+				#if isinstance(t.text, str): t.text = t.text.strip('|')
+				#text = t.text.decode("utf8");			   
+				text = t.text			   
+				text = text .replace('http:// ','http://')
+				text = text .replace('https:// ','https://')
+				text = text .replace('\r','__CR__')
+				text = text .replace('\n','__NEWLINE__')
+				text = text .replace ('|',"__PIPE__")
 				t.text = text;
+				#print("--Begin--\n"+t.text+"\n--End--\n")
 			for t in tweets:
-				outputFile.write(('\n%s|%s|%d|%d|%s|%s|%s|%s|%s|%s' % (t.username, t.date.strftime("%Y-%m-%d %H:%M"), t.retweets, t.favorites, t.text, t.geo, t.mentions, t.hashtags, t.id, t.permalink)))
+				outputFile.write(('\n%s|%s|%d|%d|"%s"|%s|%s|%s|%s|%s' % (t.username, t.date.strftime("%Y-%m-%d %H:%M"), t.retweets, t.favorites, t.text, t.geo, t.mentions, t.hashtags, t.id, t.permalink)))
 			outputFile.flush();
 			print('More %d saved on file...\n' % len(tweets))
 
