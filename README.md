@@ -1,3 +1,8 @@
+# Exporter Program is currently bugged 5/21
+
+Tried to gather some more tweets to test items and ran it a bad bug, it's no longer working. It's always giving incorrect and weird Twitter responses. 
+
+
 # Twitter Project
 
 Repo for Getting and Cleaning Tweets for UTK CURENT
