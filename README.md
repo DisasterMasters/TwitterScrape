@@ -1,6 +1,7 @@
 # Exporter Program is currently bugged 5/21
 
-Tried to gather some more tweets to test items and ran it a bad bug, it's no longer working. It's always giving incorrect and weird Twitter responses. 
+Was still trying to remove pipes from text within the gathering program. I tried to gather some more test tweets when suddenly it no longer gave tweets.
+I test this the day before (5/20) and it was working just fine. I am currently unsure if it is due to my machine or the program suddenly breaking. 
 
 
 # Twitter Project
