@@ -1,5 +1,7 @@
 # New twitter scraper under scraper folder
 
+When you've gathered all the tweets from the scraper, use the ruby script CombineTweets.rb to make a single file of all the separate files that the scraper gave to you.
+
 # Twitter Project
 
 Repo for Getting and Cleaning Tweets for UTK CURENT
