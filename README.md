@@ -1,8 +1,4 @@
-# Exporter Program is currently bugged 5/21
-
-Was still trying to remove pipes from text within the gathering program. I tried to gather some more test tweets when suddenly it no longer gave tweets.
-I test this the day before (5/20) and it was working just fine. I am currently unsure if it is due to my machine or the program suddenly breaking. 
-
+# New twitter scraper under scraper folder
 
 # Twitter Project
 
