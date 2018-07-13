@@ -20,9 +20,9 @@ for filename in Dir.glob(File.join(INPUT_DIR, "*")) do
 		text = text.gsub("|","__PIPE__")
 	
 	        textClean = text
-		textClean = textClean.gsub(/pic.twitter.com\/[^ ]*/,"")
-		textClean = textClean.gsub(/https:\/\/[^ ]*/,"")
-		textClean = textClean.gsub(/http:\/\/[^ ]*/,"")
+		textClean = textClean.gsub(/pic.twitter.com\/[^\s]*/,"")
+		textClean = textClean.gsub(/https:\/\/[^\s]*/,"")
+		textClean = textClean.gsub(/http:\/\/[^\s]*/,"")
 
 		data["text"] = text; 
 		f.write("\n%s|%s|%d|%d|%s|%s|%s|%s|%s" % [data["usernameTweet"], data["datetime"], data["nbr_retweet"], data["nbr_favorite"], data["text"], textClean, data["is_retweet"], data["ID"], data["url"]])
