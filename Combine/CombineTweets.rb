@@ -24,7 +24,6 @@ for filename in Dir.glob(File.join(INPUT_DIR, "*")) do
 		textClean = textClean.gsub(/https:\/\/[^\s]*/,"")
 		textClean = textClean.gsub(/http:\/\/[^\s]*/,"")
 
-		data["text"] = text; 
-		f.write("\n%s|%s|%d|%d|%s|%s|%s|%s|%s" % [data["usernameTweet"], data["datetime"], data["nbr_retweet"], data["nbr_favorite"], data["text"], textClean, data["is_retweet"], data["ID"], data["url"]])
+		f.write("\n%s|%s|%d|%d|%s|%s|%s|%s|%s" % [data["usernameTweet"], data["datetime"], data["nbr_retweet"], data["nbr_favorite"], text, textClean, data["is_retweet"], data["ID"], data["url"]])
 end
 f.close()
