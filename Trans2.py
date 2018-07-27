@@ -5,10 +5,10 @@ import os
 translater = Translator()
 
 #Sets path to files and outbound file path
-path = '/home/jball/Desktop/SpanishTweets'
-path2 = '/home/jball/Desktop/SpanishTweets/Translated'
+path = 'SpanishTweets'
+path2 = 'SpanishTweets/Translated'
 
-for fname in os.listdir('/home/jball/Desktop/SpanishTweets'):
+for fname in os.listdir(path):
     if fname.endswith(".csv"):
         f = open(path + "/" + fname, "rb")
         csv_f = csv.reader(f)
