@@ -5,14 +5,14 @@ import os
 translater = Translator()
 
 #Sets path to files and outbound file path
-path = '/home/atltt/Documents/SideProjects/TwitterData/holding'
-path2 = '/home/atltt/Documents/SideProjects/TwitterData/holding/OUT'
+path = '/home/jball/Desktop/SpanishTweets'
+path2 = '/home/jball/Desktop/SpanishTweets/Translated'
 
-for fname in os.listdir('/home/atltt/Documents/SideProjects/TwitterData/holding'):
+for fname in os.listdir('/home/jball/Desktop/SpanishTweets'):
     if fname.endswith(".csv"):
         f = open(path + "/" + fname, "rb")
         csv_f = csv.reader(f)
-        g = open(path2 + "/" + "OUT" + fname, "w")
+        g = open(path2 + "/" + "Translated" + fname, "w")
         csv_wf = csv.writer(g)
         tmp = {}
         x = 0
@@ -37,6 +37,5 @@ for fname in os.listdir('/home/atltt/Documents/SideProjects/TwitterData/holding'
                 #print(tmp[x].text)
                 pass
 
-
         f.close()
-        g.close()
+		g.close()
