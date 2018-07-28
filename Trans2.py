@@ -23,8 +23,9 @@ for fname in os.listdir(path):
 
     for row in csv_f:
       try:
-        tmp[x] = translater.translate(row[4], dest="en")
-        sys.stderr.write(str(x)+"\n")
+        if row[4] is not None:
+          tmp[x] = translater.translate(row[4], dest="en")
+        sys.stderr.write(str(x)+";"+row[4]+";"+tmp[x].text+"\n")
         row.append(tmp[x].text.encode('utf-8'))
         
         csv_wf.writerow(row)
