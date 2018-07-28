@@ -1,6 +1,7 @@
 from googletrans import Translator
 import csv
 import os
+import sys
 
 translater = Translator()
 
@@ -10,23 +11,25 @@ path2 = path + '/Translated'
 
 for fname in os.listdir(path):
   if fname.endswith(".csv"):
-    f = open(path + "/" + fname, "rb")
+    f = open(path + "/" + fname, "rt", encoding="utf8")
     csv_f = csv.reader(f)
-    g = open(path2 + "/" + "Translated" + fname, "w")
+    g = open(path2 + "/" + "Translated" + fname, "wt", encoding="utf8")
     csv_wf = csv.writer(g)
     tmp = {}
     x = 0
-    heading = csv_f.next()
+    heading = next (csv_f)
     heading.append('Translation')
     csv_wf.writerow(heading)
 
     for row in csv_f:
       try:
         tmp[x] = translater.translate(row[4], dest="en")
+        sys.stderr.write(str(x)+"\n")
         row.append(tmp[x].text.encode('utf-8'))
+        
         csv_wf.writerow(row)
                 #Used these to guage if still working.
-                #x = x + 1
+        x = x + 1
                 #print(x)
       except Exception():
         pass
