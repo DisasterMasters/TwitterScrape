@@ -10,25 +10,24 @@ path = 'TranslatorTestFile'
 path2 = path + '/Translated'
 
 for fname in os.listdir(path):
-  if fname.endswith(".csv"):
+  if fname.endswith(".txt"):
     f = open(path + "/" + fname, "rt", encoding="utf8")
-    csv_f = csv.reader(f)
     g = open(path2 + "/" + "Translated" + fname, "wt", encoding="utf8")
-    csv_wf = csv.writer(g)
     tmp = {}
     x = 0
-    heading = next (csv_f)
-    heading.append('Translation')
-    csv_wf.writerow(heading)
+    heading = f.readline().rstrip().split('|')
+    heading .append('Translation\n')
+    g.write(heading)
 
-    for row in csv_f:
+    for line in f:
+      row = line.rstrip().split('|')
       try:
         if row[4] is not None:
           tmp[x] = translater.translate(row[4], dest="en")
         sys.stderr.write(str(x)+";"+row[4]+";"+tmp[x].text+"\n")
         row.append(tmp[x].text.encode('utf-8'))
         
-        csv_wf.writerow(row)
+        g.write(row+'\n')
                 #Used these to guage if still working.
         x = x + 1
                 #print(x)
