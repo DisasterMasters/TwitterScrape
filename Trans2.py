@@ -6,18 +6,19 @@ import sys
 translater = Translator()
 
 #Sets path to files and outbound file path
-path = 'TranslatorTestFile'
+path = 'TranslatorTestFiles'
 path2 = path + '/Translated'
 
 for fname in os.listdir(path):
   if fname.endswith(".txt"):
+    print (fname)
     f = open(path + "/" + fname, "rt", encoding="utf8")
     g = open(path2 + "/" + "Translated" + fname, "wt", encoding="utf8")
     tmp = {}
     x = 0
     heading = f.readline().rstrip().split('|')
     heading .append('Translation\n')
-    g.write(heading)
+    g.write('|'.join (heading))
 
     for line in f:
       row = line.rstrip().split('|')
@@ -25,9 +26,10 @@ for fname in os.listdir(path):
         if row[4] is not None:
           tmp[x] = translater.translate(row[4], dest="en")
         sys.stderr.write(str(x)+";"+row[4]+";"+tmp[x].text+"\n")
-        row.append(tmp[x].text.encode('utf-8'))
+        row.append(tmp[x].text)
         
-        g.write(row+'\n')
+        g.write('|'.join(row))
+        g.write('\n')
                 #Used these to guage if still working.
         x = x + 1
                 #print(x)
