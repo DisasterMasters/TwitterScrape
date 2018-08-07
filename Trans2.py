@@ -3,7 +3,7 @@ import csv
 import os
 import sys
 
-translater = Translator()
+#translater = Translator()
 
 #Sets path to files and outbound file path
 path = 'TranslatorTestFiles'
@@ -22,6 +22,7 @@ for fname in os.listdir(path):
 
     for line in f:
       row = line.rstrip().split('|')
+      translater = Translator()
       try:
         if row[4] is not None:
           tmp[x] = translater.translate(row[4], dest="en")
