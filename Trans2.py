@@ -1,7 +1,7 @@
 from googletrans import Translator
 import csv
 import os
-import sys
+import sys, re
 
 #translater = Translator()
 
@@ -23,9 +23,10 @@ for fname in os.listdir(path):
     for line in f:
       row = line.rstrip().split('|')
       translater = Translator()
+      #r4 = re .sub ('__NEWLINE__', '\n', row [4])
+      #sys.stderr.write(r4)
       try:
-        if row[4] is not None:
-          tmp[x] = translater.translate(row[4], dest="en")
+        tmp[x] = translater.translate(row[4], dest="en")
         sys.stderr.write(str(x)+";"+row[4]+";"+tmp[x].text+"\n")
         row.append(tmp[x].text)
         
@@ -34,14 +35,14 @@ for fname in os.listdir(path):
                 #Used these to guage if still working.
         x = x + 1
                 #print(x)
-      except Exception():
+      except:
         pass
-      except ValueError:
+      #except ValueError:
                 #weird error, text seems normal but throws error
                 #Tried working this to print out the error items
                 #but it wouldn't print, will look into further
                 #print(tmp[x].text)
-        pass
+      #  pass
 
     f.close()
     g.close()
