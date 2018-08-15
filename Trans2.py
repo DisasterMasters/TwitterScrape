@@ -8,7 +8,7 @@ import sys, re
 #Sets path to files and outbound file path
 path = 'TranslatorTestFiles'
 path2 = path + '/Translated'
-
+lskipped = 0
 for fname in os.listdir(path):
   if fname.endswith(".txt"):
     print (fname)
@@ -36,6 +36,7 @@ for fname in os.listdir(path):
         x = x + 1
                 #print(x)
       except:
+        lskipped += 1
         pass
       #except ValueError:
                 #weird error, text seems normal but throws error
@@ -46,3 +47,4 @@ for fname in os.listdir(path):
 
     f.close()
     g.close()
+print(str(lskipped) + ' lines skippde due to bad encoding')
