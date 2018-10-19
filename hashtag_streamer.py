@@ -69,8 +69,8 @@ class Tweet(collections.namedtuple("Tweet", [
             "urls": ",".join(self.urls),
             "lang": self.lang if self.lang is not None else "",
             "coord_lat": str(self.coord_lat) if self.coord_lat is not None else "",
-            "coord_lon": str(self.coord_lat) if self.coord_lon is not None else "",
-            "coord_err": str(self.coord_lat) if self.coord_err is not None else "",
+            "coord_lon": str(self.coord_lon) if self.coord_lon is not None else "",
+            "coord_err": str(self.coord_err) if self.coord_err is not None else "",
             "permalink": self.permalink
         }
 
@@ -93,6 +93,15 @@ class Tweet(collections.namedtuple("Tweet", [
                 segments = list(zip(p, p[1:] + p[:1]))
 
                 a = sum(x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in segments) * 0.5
+
+                if a == 0:
+                    # Area described is a point, so return it
+                    (x, y), _ = segments[0]
+
+                    lat = math.degrees(math.asin(y * (cos_phi / R_earth)))
+                    lon = math.degrees(x * (sec_phi / R_earth))
+
+                    return (lat, lon, 0.0)
 
                 cx = sum((x0 + x1) * (x0 * y1 - x1 * y0) for (x0, y0), (x1, y1) in segments) / (6 * a)
                 cy = sum((y0 + y1) * (x0 * y1 - x1 * y0) for (x0, y0), (x1, y1) in segments) / (6 * a)
@@ -313,3 +322,5 @@ if __name__ == "__main__":
 
     get_old(auth, ["Hurricane Florence", "#Florence"], csvout.writerow)
     get_new(auth, ["Hurricane Florence", "#Florence"], csvout.writerow)
+
+
