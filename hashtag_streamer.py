@@ -89,6 +89,8 @@ class Tweet(collections.namedtuple("Tweet", [
             comxs = []
             comys = []
 
+            points = []
+
             for p in polygons:
                 segments = list(zip(p, p[1:] + p[:1]))
 
@@ -96,15 +98,11 @@ class Tweet(collections.namedtuple("Tweet", [
 
                 if a == 0:
                     # Area described is a point, so return it
-                    (x, y), _ = segments[0]
+                    cx, cy = p[0]
 
-                    lat = math.degrees(math.asin(y * (cos_phi / R_earth)))
-                    lon = math.degrees(x * (sec_phi / R_earth))
-
-                    return (lat, lon, 0.0)
-
-                cx = sum((x0 + x1) * (x0 * y1 - x1 * y0) for (x0, y0), (x1, y1) in segments) / (6 * a)
-                cy = sum((y0 + y1) * (x0 * y1 - x1 * y0) for (x0, y0), (x1, y1) in segments) / (6 * a)
+                else:
+                    cx = sum((x0 + x1) * (x0 * y1 - x1 * y0) for (x0, y0), (x1, y1) in segments) / (6 * a)
+                    cy = sum((y0 + y1) * (x0 * y1 - x1 * y0) for (x0, y0), (x1, y1) in segments) / (6 * a)
 
                 areas.append(abs(a))
                 comxs.append(cx)
@@ -112,9 +110,13 @@ class Tweet(collections.namedtuple("Tweet", [
 
             total_area = sum(areas)
 
-            # Compute centroid of all polygons from weighted polygon centroids
-            cx = sum(c * a for c, a in zip(comxs, areas)) / total_area
-            cy = sum(c * a for c, a in zip(comys, areas)) / total_area
+            if total_area == 0:
+                cx = sum(comxs) / len(comxs)
+                cy = sum(comys) / len(comys)
+            else:
+                # Compute centroid of all polygons from weighted polygon centroids
+                cx = sum(c * a for c, a in zip(comxs, areas)) / total_area
+                cy = sum(c * a for c, a in zip(comys, areas)) / total_area
 
             # Unmap from projection to exact coordinates
             lat = math.degrees(math.asin(cy * (cos_phi / R_earth)))
@@ -135,8 +137,8 @@ class Tweet(collections.namedtuple("Tweet", [
 
         # Clean text
 
-        # Strip whitespace and normalize
-        cleantext = unicodedata.normalize('NFC', text.strip())
+        # Normalize Unicode
+        cleantext = unicodedata.normalize('NFC', text)
         # Remove characters outside BMP (emojis)
         #cleantext = "".join(c for c in clean_text if ord(c) <= 0xFFFF)
         # Remove newlines and tabs
@@ -149,6 +151,8 @@ class Tweet(collections.namedtuple("Tweet", [
         cleantext = re.sub(r"\A(@\w+ ?)*", "", cleantext)
         # Remove via @handle
         cleantext = re.sub(r"via @\w+", "", cleantext)
+        # Strip whitespace
+        cleantext = cleantext.strip()
 
         # User ID
         userid = status.author.id
@@ -227,7 +231,6 @@ def get_old(auth, queries, writerow):
         while True:
             results = api.search(
                 q = q,
-                #count = 100,
                 result_type = "mixed",
                 max_id = max_id,
                 tweet_mode = "extended",
@@ -320,7 +323,5 @@ if __name__ == "__main__":
         "jGNOVDxllHhO57EaN2FVejiR7crpENStbZ7bHqwv2tYDU"
     )
 
-    get_old(auth, ["Hurricane Florence", "#Florence"], csvout.writerow)
-    get_new(auth, ["Hurricane Florence", "#Florence"], csvout.writerow)
-
-
+    get_old(auth, sys.argv, csvout.writerow)
+    get_new(auth, sys.argv, csvout.writerow)
