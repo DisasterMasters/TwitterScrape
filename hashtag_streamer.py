@@ -41,10 +41,10 @@ class Tweet(collections.namedtuple("Tweet", [
             date = datetime.datetime.strptime(d["date"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo = datetime.timezone.utc),
             retweets = int(d["retweets"]),
             favorites = int(d["favorites"]),
-            hashtags = d["hashtags"].split(",") if d["hashtags"] != "" else [],
-            mentions = list(map(int, d["mentions"].split(","))) if d["mentions"] != "" else [],
-            media = d["media"].split(",") if d["media"] != "" else [],
-            urls = d["urls"].split(",") if d["urls"] != "" else [],
+            hashtags = d["hashtags"].split(" ") if d["hashtags"] != "" else [],
+            mentions = list(map(int, d["mentions"].split(" "))) if d["mentions"] != "" else [],
+            media = d["media"].split(" ") if d["media"] != "" else [],
+            urls = d["urls"].split(" ") if d["urls"] != "" else [],
             lang = d["lang"] if d["lang"] != "" else None,
             coord_lat = float(d["coord_lat"]) if d["coord_lat"] != "" else None,
             coord_lon = float(d["coord_lon"]) if d["coord_lon"] != "" else None,
@@ -63,10 +63,10 @@ class Tweet(collections.namedtuple("Tweet", [
             "date": self.date.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "retweets": str(self.retweets),
             "favorites": str(self.favorites),
-            "hashtags": ",".join(self.hashtags),
-            "mentions": ",".join(map(str, self.mentions)),
-            "media": ",".join(self.media),
-            "urls": ",".join(self.urls),
+            "hashtags": " ".join(self.hashtags),
+            "mentions": " ".join(map(str, self.mentions)),
+            "media": " ".join(self.media),
+            "urls": " ".join(self.urls),
             "lang": self.lang if self.lang is not None else "",
             "coord_lat": str(self.coord_lat) if self.coord_lat is not None else "",
             "coord_lon": str(self.coord_lon) if self.coord_lon is not None else "",
@@ -74,6 +74,7 @@ class Tweet(collections.namedtuple("Tweet", [
             "permalink": self.permalink
         }
 
+    @staticmethod
     def from_tweepy(status):
         def get_info():
             cos_phi = math.sqrt(math.pi / 2)
@@ -88,8 +89,6 @@ class Tweet(collections.namedtuple("Tweet", [
             areas = []
             comxs = []
             comys = []
-
-            points = []
 
             for p in polygons:
                 segments = list(zip(p, p[1:] + p[:1]))
