@@ -4,6 +4,8 @@ import datetime
 import math
 import re
 import sys
+import time
+import threading
 import unicodedata
 
 import tweepy
@@ -221,15 +223,15 @@ class Tweet(collections.namedtuple("Tweet", [
             permalink = permalink
         )
 
-def get_old(auth, queries, writerow):
-    api = tweepy.API(auth)
+def query_old(auth, queries, writerow, mut):
+    def run():
+        api = tweepy.API(auth)
 
-    for q in queries:
         max_id = -1
 
         while True:
             results = api.search(
-                q = q,
+                q = " OR ".join(queries),
                 result_type = "mixed",
                 max_id = max_id,
                 tweet_mode = "extended",
@@ -243,18 +245,17 @@ def get_old(auth, queries, writerow):
 
             for status in results:
                 d = {k: v.replace("\n", "__NEWLINE__").replace("|", "__PIPE__")
-                    for k, v in Tweet.from_tweepy(status).to_dict().items()}
+                     for k, v in Tweet.from_tweepy(status).to_dict().items()}
 
-                writerow(d)
+                with mut:
+                    writerow(d)
 
             max_id = results[-1].id - 1
 
-def get_new(auth, queries, writerow):
-    class CsvListener(tweepy.StreamListener):
-        def __init__(self, writerow):
-            super().__init__()
-            self.writerow = writerow
+    return threading.Thread(target = run)
 
+def query_new(auth, queries, writerow, mut):
+    class QueryListener(tweepy.StreamListener):
         def on_status(self, status):
             if hasattr(status, "extended_tweet"):
                 for k, v in status.extended_tweet.items():
@@ -263,22 +264,97 @@ def get_new(auth, queries, writerow):
             d = {k: v.replace("\n", "__NEWLINE__").replace("|", "__PIPE__")
                  for k, v in Tweet.from_tweepy(status).to_dict().items()}
 
-            self.writerow(d)
+            with mut:
+                writerow(d)
 
         def on_error(self, status_code):
             if status_code == 420:
-                return False
+                time.sleep(15 * 60)
+            elif status_code // 100 == 5:
+                time.sleep(15)
 
     strm = tweepy.Stream(
         auth = auth,
-        listener = CsvListener(writerow),
+        listener = QueryListener(),
         tweet_mode = "extended",
         include_entities = True,
         monitor_rate_limit = True,
         wait_on_rate_limit = True
     )
 
-    strm.filter(track = queries)
+    return threading.Thread(
+        target = strm.filter,
+        kwargs = {"track": queries}
+    )
+
+def user_old(auth, users, writerow, mut):
+    def run():
+        api = tweepy.API(auth)
+
+        for u in users:
+            max_id = None
+
+            while True:
+                results = api.user_timeline(
+                    u,
+                    max_id = max_id,
+                    tweet_mode = "extended",
+                    include_entities = True,
+                    monitor_rate_limit = True,
+                    wait_on_rate_limit = True
+                )
+
+                if not results:
+                    break
+
+                for status in results:
+                    d = {k: v.replace("\n", "__NEWLINE__").replace("|", "__PIPE__")
+                         for k, v in Tweet.from_tweepy(status).to_dict().items()}
+
+                    with mut:
+                        writerow(d)
+
+                max_id = results[-1].id - 1
+
+    return threading.Thread(target = run)
+
+def user_new(auth, users, writerow, mut):
+    class UserListener(tweepy.StreamListener):
+        def on_status(self, status):
+            if hasattr(status, "extended_tweet"):
+                for k, v in status.extended_tweet.items():
+                    setattr(status, k, v)
+
+            d = {k: v.replace("\n", "__NEWLINE__").replace("|", "__PIPE__")
+                 for k, v in Tweet.from_tweepy(status).to_dict().items()}
+
+            with mut:
+                writerow(d)
+
+        def on_error(self, status_code):
+            if status_code == 420:
+                time.sleep(15 * 60)
+            elif status_code // 100 == 5:
+                time.sleep(15)
+
+    # Convert screen name to user id
+    api = tweepy.API(auth)
+    userids = [api.get_user(u).id_str for u in users]
+    del api
+
+    strm = tweepy.Stream(
+        auth = auth,
+        listener = UserListener(),
+        tweet_mode = "extended",
+        include_entities = True,
+        monitor_rate_limit = True,
+        wait_on_rate_limit = True
+    )
+
+    return threading.Thread(
+        target = strm.filter,
+        kwargs = {"follow": userids}
+    )
 
 class ScrapyDialect(csv.Dialect):
     delimiter = "|"
@@ -322,5 +398,11 @@ if __name__ == "__main__":
         "jGNOVDxllHhO57EaN2FVejiR7crpENStbZ7bHqwv2tYDU"
     )
 
-    get_old(auth, sys.argv, csvout.writerow)
-    get_new(auth, sys.argv, csvout.writerow)
+    mut = threading.Lock()
+
+    # Do stuff here
+    #
+    #thrd = query_new(auth, sys.argv, csvout.writerow, mut)
+    #thrd.start()
+    #query_old(auth, sys.argv, csvout.writerow, mut).run()
+    #thrd.join()
