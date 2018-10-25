@@ -141,7 +141,7 @@ class Tweet(collections.namedtuple("Tweet", [
         # Normalize Unicode
         cleantext = unicodedata.normalize('NFC', text)
         # Remove characters outside BMP (emojis)
-        #cleantext = "".join(c for c in clean_text if ord(c) <= 0xFFFF)
+        cleantext = "".join(c for c in cleantext if ord(c) <= 0xFFFF)
         # Remove newlines and tabs
         cleantext = cleantext.replace("\n", " ").replace("\t", " ")
         # Remove HTTP(S) link
