@@ -69,7 +69,7 @@ class TweetScraper(CrawlSpider):
                 ID = item.xpath('.//@data-tweet-id').extract()
                 if not ID:
                     continue
-                tweet['ID'] = ID[0]
+                tweet['id'] = ID[0]
 
                 ### get text content
                 tweet['text'] = ' '.join(
@@ -153,7 +153,7 @@ class TweetScraper(CrawlSpider):
                 if self.crawl_user:
                     ### get user info
                     user = User()
-                    user['ID'] = tweet['user_id']
+                    user['id'] = tweet['user_id']
                     user['name'] = item.xpath('.//@data-name').extract()[0]
                     user['screen_name'] = item.xpath('.//@data-screen-name').extract()[0]
                     user['avatar'] = \

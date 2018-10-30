@@ -5,7 +5,7 @@ from scrapy import Item, Field
 
 
 class Tweet(Item):
-    ID = Field()       # tweet id
+    id = Field()       # tweet id
     url = Field()      # tweet url
     datetime = Field() # post time
     text = Field()     # text content

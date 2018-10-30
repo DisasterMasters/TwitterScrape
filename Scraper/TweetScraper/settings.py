@@ -20,10 +20,10 @@ SAVE_TWEET_PATH = './Data/tweet/'
 SAVE_USER_PATH = './Data/user/'
 
 # settings for mongodb
-MONGODB_SERVER = "127.0.0.1"
+MONGODB_SERVER = "da1.eecs.utk.edu"
 MONGODB_PORT = 27017
-MONGODB_DB = "TweetScraper"        # database name to save the crawled data
-MONGODB_TWEET_COLLECTION = "tweet" # collection name to save tweets
-MONGODB_USER_COLLECTION = "user"   # collection name to save users
+MONGODB_DB = "twitter"        # database name to save the crawled data
+MONGODB_TWEET_COLLECTION = "rawJMiichael" # collection name to save tweets
+#MONGODB_USER_COLLECTION = "user"   # collection name to save users
 
 
