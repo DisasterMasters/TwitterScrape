@@ -1,408 +1,297 @@
-import csv
-import collections
-import datetime
 import math
+import datetime
 import re
 import sys
-import time
+import signal
+import socket
+from time import sleep
 import threading
-import unicodedata
+from urllib.request import urlopen
+from urllib.parse import urlencode
+from email.utils import format_datetime
+import queue
 
+import pymongo
 import tweepy
 
-class Tweet(collections.namedtuple("Tweet", [
-            "id",
-            "text",
-            "cleantext",
-            "userid",
-            "username",
-            "reply_to",
-            "date",
-            "retweets",
-            "favorites",
-            "hashtags",
-            "mentions",
-            "media",
-            "urls",
-            "lang",
-            "coord_lat",
-            "coord_lon",
-            "coord_err",
-            "permalink"
-        ])):
+def now():
+    return datetime.datetime.utcnow().replace(tzinfo = datetime.timezone.utc)
 
-    @staticmethod
-    def from_dict(d):
-        return Tweet(
-            id = int(d["id"]),
-            text = d["text"],
-            cleantext = d["cleantext"],
-            userid = int(d["userid"]),
-            username = d["username"],
-            reply_to = int(d["reply_to"]) if d["reply_to"] != "" else None,
-            date = datetime.datetime.strptime(d["date"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo = datetime.timezone.utc),
-            retweets = int(d["retweets"]),
-            favorites = int(d["favorites"]),
-            hashtags = d["hashtags"].split(" ") if d["hashtags"] != "" else [],
-            mentions = list(map(int, d["mentions"].split(" "))) if d["mentions"] != "" else [],
-            media = d["media"].split(" ") if d["media"] != "" else [],
-            urls = d["urls"].split(" ") if d["urls"] != "" else [],
-            lang = d["lang"] if d["lang"] != "" else None,
-            coord_lat = float(d["coord_lat"]) if d["coord_lat"] != "" else None,
-            coord_lon = float(d["coord_lon"]) if d["coord_lon"] != "" else None,
-            coord_err = float(d["coord_err"]) if d["coord_err"] != "" else None,
-            permalink = d["permalink"]
-        )
+TWITTER_AUTH = tweepy.OAuthHandler(
+    "ZFVyefAyg58PTdG7m8Mpe7cze",
+    "KyWRZ9QkiC2MiscQ7aGpl5K2lbcR3pHYFTs7SCVIyxMlVfGjw0"
+)
+TWITTER_AUTH.set_access_token(
+    "1041697847538638848-8J81uZBO1tMPvGHYXeVSngKuUz7Cyh",
+    "jGNOVDxllHhO57EaN2FVejiR7crpENStbZ7bHqwv2tYDU"
+)
 
-    def to_dict(self):
-        return {
-            "id": str(self.id),
-            "text": self.text,
-            "cleantext": self.cleantext,
-            "userid": str(self.userid),
-            "username": self.username,
-            "reply_to": str(self.reply_to),
-            "date": self.date.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "retweets": str(self.retweets),
-            "favorites": str(self.favorites),
-            "hashtags": " ".join(self.hashtags),
-            "mentions": " ".join(map(str, self.mentions)),
-            "media": " ".join(self.media),
-            "urls": " ".join(self.urls),
-            "lang": self.lang if self.lang is not None else "",
-            "coord_lat": str(self.coord_lat) if self.coord_lat is not None else "",
-            "coord_lon": str(self.coord_lon) if self.coord_lon is not None else "",
-            "coord_err": str(self.coord_err) if self.coord_err is not None else "",
-            "permalink": self.permalink
+# Convert tweets obtained with extended REST API to a format similar to the
+# compatibility mode used by the streaming API
+def extended_compat(tweet, status_permalink = None):
+    full_text = tweet["full_text"]
+    entities = tweet["entities"]
+
+    tweet["extended_tweet"] = {
+        "full_text": tweet["full_text"],
+        "display_text_range": tweet["display_text_range"],
+        "entities": tweet["entities"]
+    }
+
+    if "extended_entities" in tweet:
+        tweet["extended_tweet"]["extended_entities"] = tweet["extended_entities"]
+        del tweet["extended_entities"]
+
+    del tweet["full_text"]
+    del tweet["display_text_range"]
+
+    if len(full_text) > 140:
+        tweet["truncated"] = True
+
+        if status_permalink is None:
+            long_url = "https://twitter.com/tweet/web/status/" + tweet["id_str"]
+
+            # Use TinyURL to shorten link to tweet
+            with urlopen('http://tinyurl.com/api-create.php?' + urlencode({'url': long_url})) as response:
+                short_url = response.read().decode()
+
+            status_permalink = {
+                "url": short_url,
+                "expanded_url": long_url,
+                "display_url": "twitter.com/tweet/web/status/\u2026",
+                "indices": [140 - len(short_url), 140]
+            }
+        else:
+            short_url = status_permalink["url"]
+            status_permalink["indices"] = [140 - len(short_url), 140]
+
+        trunc_len = 138 - len(short_url)
+        tweet["text"] = full_text[:trunc_len] + "\u2026 " + short_url
+
+        tweet["entities"] = {
+            "hashtags": [],
+            "symbols": [],
+            "user_mentions": [],
+            "urls": [status_permalink]
         }
 
-    @staticmethod
-    def from_tweepy(status):
-        def get_info():
-            cos_phi = math.sqrt(math.pi / 2)
-            sec_phi = math.sqrt(2 / math.pi)
-            R_earth = 6371
+        for k in tweet["entities"].keys():
+            for v in entities[k]:
+                if v["indices"][1] <= trunc_len:
+                    tweet["entities"][k].append(v)
 
-            # Map polygon coordinates to points on an equal-area cylindrical projection (Smyth equal-surface)
-            polygons = [[(math.radians(lon) * cos_phi * R_earth, math.sin(math.radians(lat)) * sec_phi * R_earth)
-                         for [lat, lon] in p]
-                         for p in status.place.bounding_box.coordinates]
+    else:
+        tweet["text"] = full_text
+        tweet["entities"] = {k: entities[k] for k in ("hashtags", "symbols", "user_mentions", "urls")}
 
-            areas = []
-            comxs = []
-            comys = []
-
-            for p in polygons:
-                segments = list(zip(p, p[1:] + p[:1]))
-
-                a = sum(x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in segments) * 0.5
-
-                if a == 0:
-                    # Area described is a point, so return it
-                    cx, cy = p[0]
-
-                else:
-                    cx = sum((x0 + x1) * (x0 * y1 - x1 * y0) for (x0, y0), (x1, y1) in segments) / (6 * a)
-                    cy = sum((y0 + y1) * (x0 * y1 - x1 * y0) for (x0, y0), (x1, y1) in segments) / (6 * a)
-
-                areas.append(abs(a))
-                comxs.append(cx)
-                comys.append(cy)
-
-            total_area = sum(areas)
-
-            if total_area == 0:
-                cx = sum(comxs) / len(comxs)
-                cy = sum(comys) / len(comys)
-            else:
-                # Compute centroid of all polygons from weighted polygon centroids
-                cx = sum(c * a for c, a in zip(comxs, areas)) / total_area
-                cy = sum(c * a for c, a in zip(comys, areas)) / total_area
-
-            # Unmap from projection to exact coordinates
-            lat = math.degrees(math.asin(cy * (cos_phi / R_earth)))
-            lon = math.degrees(cx * (sec_phi / R_earth))
-
-            r = math.sqrt(total_area / math.pi)
-
-            return (lat, lon, r)
-
-        # ID
-        id = status.id
-
-        # Text
-        try:
-            text = status.full_text
-        except AttributeError:
-            text = status.text
-
-        # Clean text
-
-        # Normalize Unicode
-        cleantext = unicodedata.normalize('NFC', text)
-        # Remove characters outside BMP (emojis)
-        cleantext = "".join(c for c in cleantext if ord(c) <= 0xFFFF)
-        # Remove newlines and tabs
-        cleantext = cleantext.replace("\n", " ").replace("\t", " ")
-        # Remove HTTP(S) link
-        cleantext = re.sub(r"https?://\S+", "", cleantext)
-        # Remove pic.twitter.com
-        cleantext = re.sub(r"pic.twitter.com/\S+", "", cleantext)
-        # Remove @handle at the start of the tweet
-        cleantext = re.sub(r"\A(@\w+ ?)*", "", cleantext)
-        # Remove via @handle
-        cleantext = re.sub(r"via @\w+", "", cleantext)
-        # Strip whitespace
-        cleantext = cleantext.strip()
-
-        # User ID
-        userid = status.author.id
-
-        # Username
-        username = status.author.screen_name
-
-        # ID of tweet being replied to
-        reply_to = status.in_reply_to_status_id
-
-        # Creation date
-        date = status.created_at.replace(tzinfo = datetime.timezone.utc)
-
-        # Retweets
-        retweets = status.retweet_count
-
-        # Favorites
-        favorites = status.favorite_count
-
-        # Hashtags
-        hashtags = ["#" + e["text"] for e in status.entities["hashtags"]] + ["$" + e["text"] for e in status.entities["symbols"]]
-
-        # Mentions
-        mentions = [e["id"] for e in status.entities["user_mentions"]]
-
-        # URLs to attached media
-        media = [e["media_url"] for e in status.entities["media"]] if "media" in status.entities else []
-
-        # URLs to other items in tweet text
-        urls = [e["expanded_url"] for e in status.entities["urls"]]
-
-        # Language
-        lang = None if status.lang == "und" else status.lang
-
-        # Coordinates
-        if status.coordinates is not None and status.coordinates["type"] == "Point":
-            [coord_lat, coord_lon] = status.coordinates["coordinates"]
-            coord_err = 0.0
-        elif status.place is not None:
-            coord_lat, coord_lon, coord_err = get_info()
+    if "quoted_status" in tweet:
+        if "quoted_status_permalink" in tweet:
+            quoted_status_permalink = tweet["quoted_status_permalink"]
+            del tweet["quoted_status_permalink"]
         else:
-            coord_lat = None
-            coord_lon = None
-            coord_err = None
+            quoted_status_permalink = None
 
-        # Permalink
-        permalink = "https://twitter.com/statuses/" + status.id_str
+        extended_compat(tweet["quoted_status"], quoted_status_permalink)
 
-        return Tweet(
-            id = id,
-            text = text,
-            cleantext = cleantext,
-            userid = userid,
-            username = username,
-            reply_to = reply_to,
-            date = date,
-            retweets = retweets,
-            favorites = favorites,
-            hashtags = hashtags,
-            mentions = mentions,
-            media = media,
-            urls = urls,
-            lang = lang,
-            coord_lat = coord_lat,
-            coord_lon = coord_lon,
-            coord_err = coord_err,
-            permalink = permalink
-        )
+def oldtweets_builder(funcname, **kwargs):
+    class QueueThread(threading.Thread):
+        def __init__(self, queries, qu, ev):
+            super().__init__()
 
-def query_old(auth, queries, writerow, mut):
-    def run():
-        api = tweepy.API(auth)
+            self.queries = queries
+            self.qu = qu
+            self.ev = ev
 
-        max_id = -1
+            api = tweepy.API(TWITTER_AUTH)
+            self.results_f = getattr(api, funcname)
 
-        while True:
-            results = api.search(
-                q = " OR ".join(queries),
-                result_type = "mixed",
-                max_id = max_id,
-                tweet_mode = "extended",
-                include_entities = True,
-                monitor_rate_limit = True,
-                wait_on_rate_limit = True
+        def run(self):
+            for i in self.queries:
+                max_id = None
+
+                while not self.ev.wait(1):
+                    print(i)
+
+                    statuses = self.results_f(
+                        i,
+                        max_id = max_id,
+                        tweet_mode = "extended",
+                        include_entities = True,
+                        monitor_rate_limit = True,
+                        wait_on_rate_limit = True,
+                        **kwargs
+                    )
+
+                    timestamp = now()
+
+                    if not statuses:
+                        break
+
+                    statuses = [status._json for status in statuses]
+
+                    for status in statuses:
+                        extended_compat(status)
+
+                    self.qu.put((statuses, timestamp))
+
+                    #try:
+                    #    max_id_match = re.search(r"max_id=(?P<max_id>\d+)", results["search_metadata"]["next_results"])
+                    #    max_id = int(max_id_match.group("max_id"))
+                    #except Exception:
+                    max_id = statuses[-1]["id"] - 1
+
+    return lambda queries, qu, ev: QueueThread(queries, qu, ev)
+
+def newtweets_builder(filtername, **kwargs):
+    class QueueListener(tweepy.StreamListener):
+        def __init__(self, qu, ev):
+            #super().__init__(tweepy.API(parser = tweepy.parsers.JSONParser()))
+            super().__init__()
+
+            self.qu = qu
+            self.ev = ev
+
+        def on_status(self, status):
+            timestamp = now()
+
+            #self.qu.put((status, timestamp))
+            self.qu.put((status._json, timestamp))
+
+            return not self.ev.wait(0)
+
+        def on_error(self, status_code):
+            if self.ev.is_set():
+                return False
+            elif status_code == 420:
+                sleep(60)
+            elif status_code // 100 == 5:
+                sleep(5)
+
+    class QueueThread(threading.Thread):
+        def __init__(self, queries, qu, ev):
+            super().__init__()
+            self.queries = queries
+
+            self.strm = tweepy.Stream(
+                auth = TWITTER_AUTH,
+                listener = QueueListener(qu, ev),
+                **kwargs
             )
 
-            if not results:
-                break
+        def run(self):
+            self.strm.filter(**{filtername: self.queries})
 
-            for status in results:
-                d = {k: v.replace("\n", "__NEWLINE__").replace("|", "__PIPE__")
-                     for k, v in Tweet.from_tweepy(status).to_dict().items()}
 
-                with mut:
-                    writerow(d)
+    return lambda queries, qu, ev: QueueThread(queries, qu, ev)
 
-            max_id = results[-1].id - 1
 
-    return threading.Thread(target = run)
+keyword_old = oldtweets_builder("search", result_type = "mixed")
+user_old = oldtweets_builder("user_timeline")
+keyword_new = newtweets_builder("track")
 
-def query_new(auth, queries, writerow, mut):
-    class QueryListener(tweepy.StreamListener):
-        def on_status(self, status):
-            if hasattr(status, "extended_tweet"):
-                for k, v in status.extended_tweet.items():
-                    setattr(status, k, v)
+# Special case: Streaming API can't use usernames, so look up user IDs beforehand
+def user_new(auth, queries, qu):
+    f = oldtweets_builder("follow")
+    api = tweepy.API(TWITTER_AUTH)
+    return f(auth, [api.get_user(x).id_str for x in queries], qu)
 
-            d = {k: v.replace("\n", "__NEWLINE__").replace("|", "__PIPE__")
-                 for k, v in Tweet.from_tweepy(status).to_dict().items()}
+def recvthrd(collname, qu):
+    conn = pymongo.MongoClient("da1.eecs.utk.edu" if socket.gethostname() == "75f7e392a7ec" else "localhost")
+    coll = conn['twitter'][collname]
 
-            with mut:
-                writerow(d)
+    # Make tweets indexable by id and text fields
+    coll.create_index([('id', pymongo.HASHED)], name = 'id_index')
+    coll.create_index([('id', pymongo.ASCENDING)], name = 'id_ordered_index')
+    coll.create_index([('text', pymongo.TEXT)], name = 'search_index', default_language = 'english')
 
-        def on_error(self, status_code):
-            if status_code == 420:
-                time.sleep(15 * 60)
-            elif status_code // 100 == 5:
-                time.sleep(15)
+    def print_status(status):
+        print("\"%s\" -- @%s, %s (retrieved %s)" % (
+            status["text"],
+            status["user"]["screen_name"],
+            status["created_at"],
+            status["retrieved_at"]
+        ))
 
-    strm = tweepy.Stream(
-        auth = auth,
-        listener = QueryListener(),
-        tweet_mode = "extended",
-        include_entities = True,
-        monitor_rate_limit = True,
-        wait_on_rate_limit = True
-    )
+    while True:
+        status, timestamp = qu.get()
 
-    return threading.Thread(
-        target = strm.filter,
-        kwargs = {"track": queries}
-    )
+        if status is None:
+            print("SIGINT received at " + format_datetime(timestamp))
+            break
+        elif type(status) is list and type(status[0]) is dict:
+            for i in status:
+                i["retrieved_at"] = format_datetime(timestamp)
+                print_status(i)
 
-def user_old(auth, users, writerow, mut):
-    def run():
-        api = tweepy.API(auth)
+            coll.insert_many(status, ordered = False)
+        elif type(status) is dict:
+            status["retrieved_at"] = format_datetime(timestamp)
+            print_status(status)
 
-        for u in users:
-            max_id = None
+            coll.insert_one(status)
 
-            while True:
-                results = api.user_timeline(
-                    u,
-                    max_id = max_id,
-                    tweet_mode = "extended",
-                    include_entities = True,
-                    monitor_rate_limit = True,
-                    wait_on_rate_limit = True
-                )
+    # Delete duplicate tweets
+    dups = []
+    ids = set()
 
-                if not results:
-                    break
+    for r in coll.find(projection = ["id"]):
+        if r['id'] in ids:
+            dups.append(r['_id'])
 
-                for status in results:
-                    d = {k: v.replace("\n", "__NEWLINE__").replace("|", "__PIPE__")
-                         for k, v in Tweet.from_tweepy(status).to_dict().items()}
+        ids.add(r['id'])
 
-                    with mut:
-                        writerow(d)
-
-                max_id = results[-1].id - 1
-
-    return threading.Thread(target = run)
-
-def user_new(auth, users, writerow, mut):
-    class UserListener(tweepy.StreamListener):
-        def on_status(self, status):
-            if hasattr(status, "extended_tweet"):
-                for k, v in status.extended_tweet.items():
-                    setattr(status, k, v)
-
-            d = {k: v.replace("\n", "__NEWLINE__").replace("|", "__PIPE__")
-                 for k, v in Tweet.from_tweepy(status).to_dict().items()}
-
-            with mut:
-                writerow(d)
-
-        def on_error(self, status_code):
-            if status_code == 420:
-                time.sleep(15 * 60)
-            elif status_code // 100 == 5:
-                time.sleep(15)
-
-    # Convert screen name to user id
-    api = tweepy.API(auth)
-    userids = [api.get_user(u).id_str for u in users]
-    del api
-
-    strm = tweepy.Stream(
-        auth = auth,
-        listener = UserListener(),
-        tweet_mode = "extended",
-        include_entities = True,
-        monitor_rate_limit = True,
-        wait_on_rate_limit = True
-    )
-
-    return threading.Thread(
-        target = strm.filter,
-        kwargs = {"follow": userids}
-    )
-
-class ScrapyDialect(csv.Dialect):
-    delimiter = "|"
-    quotechar = "'"
-    doublequote = True
-    skipinitialspace = False
-    lineterminator = "\n"
-    quoting = csv.QUOTE_MINIMAL
+    coll.delete_many({'_id': {'$in': dups}})
 
 if __name__ == "__main__":
-    csvout = csv.DictWriter(sys.stdout, dialect = ScrapyDialect, fieldnames = [
-        "id",
-        "text",
-        "cleantext",
-        "userid",
-        "username",
-        "reply_to",
-        "date",
-        "retweets",
-        "favorites",
-        "hashtags",
-        "mentions",
-        "media",
-        "urls",
-        "lang",
-        "coord_lat",
-        "coord_lon",
-        "coord_err",
-        "permalink"
-    ])
+    qu = queue.SimpleQueue()
+    ev = threading.Event()
+    pool = []
 
-    csvout.writeheader()
+    def sigint(sig, frame):
+        timestamp = now()
 
-    # These are unique for this program
-    auth = tweepy.OAuthHandler(
-        "ZFVyefAyg58PTdG7m8Mpe7cze",
-        "KyWRZ9QkiC2MiscQ7aGpl5K2lbcR3pHYFTs7SCVIyxMlVfGjw0"
-    )
-    auth.set_access_token(
-        "1041697847538638848-8J81uZBO1tMPvGHYXeVSngKuUz7Cyh",
-        "jGNOVDxllHhO57EaN2FVejiR7crpENStbZ7bHqwv2tYDU"
-    )
+        ev.set()
+        for i in pool:
+            i.join()
 
-    mut = threading.Lock()
+        qu.put((None, timestamp))
+
+    signal.signal(signal.SIGINT, sigint)
+
+    power_keywords = [
+        "power",
+        "electricity",
+        "power loss",
+        "power recovery",
+        "power outage",
+        "power shortage",
+        "power problem",
+        "no light",
+        "no power",
+        "no electricity"
+    ]
+
+    climate_change_keywords = [
+        "climate change",
+        "global warming",
+        "green house",
+        "sea level",
+        "carbon dioxide",
+        "emission",
+        "ozone",
+        "ecosystem",
+        "solar",
+        "sea ice",
+        "glaciers"
+    ]
+
+    pool.append(keyword_old(power_keywords, qu, ev))
+    pool[-1].start()
+    pool.append(keyword_new(power_keywords, qu, ev))
+    pool[-1].start()
+
+    recvthrd("rawAMiscPower", qu)
 
     # Do stuff here
-    #
-    #thrd = query_new(auth, sys.argv, csvout.writerow, mut)
-    #thrd.start()
-    #query_old(auth, sys.argv, csvout.writerow, mut).run()
-    #thrd.join()
+
+
