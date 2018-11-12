@@ -4,7 +4,9 @@ import time
 from urllib.parse import urlparse, quote, unquote
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
+import json
 
+import nltk
 import lxml.html
 import lxml.etree
 
@@ -19,21 +21,8 @@ HTTP_HEADER = {
     'Connection': 'keep-alive'
 }
 
-# Longest common substring algorithm
-def lcs(s1, s2):
-    m = [[0] * (1 + len(s2)) for i in range(1 + len(s1))]
-    longest, x_longest = 0, 0
-    for x in range(1, 1 + len(s1)):
-        for y in range(1, 1 + len(s2)):
-            if s1[x - 1] == s2[y - 1]:
-                m[x][y] = m[x - 1][y - 1] + 1
-                if m[x][y] > longest:
-                    longest = m[x][y]
-                    x_longest = x
-            else:
-                m[x][y] = 0
-    return s1[x_longest - longest: x_longest]
-
+# TODO: Rewrite this with Selenium
+# TODO: Integrate OpenCV to match images
 def twittercrawl(url0, visited = set(), depth = -1):
     handles = []
     queue = collections.deque([url0])
@@ -43,6 +32,8 @@ def twittercrawl(url0, visited = set(), depth = -1):
 
         if url in visited:
             continue
+
+        print(url, file = sys.stderr)
 
         visited.add(url)
 
@@ -81,42 +72,43 @@ def twittercrawl(url0, visited = set(), depth = -1):
 
     return handles
 
-def twitterfilter(handles, names):
-    names = ["".join(c.lower() for c in name if c.isalnum()) for name in names]
-
-    candidate = None
-    lcslen = 0
-
-    for handle in handles:
-        for name in names:
-            newlen = len(lcs(name, handle.lower()))
-
-            if newlen > lcslen:
-                candidate = handle
-                lcslen = newlen
-
-    return candidate
-
-def ddg_search(query):
+# Use SerpApi to get the first few Google search results for query
+def google_search(query):
     new_t = time.clock()
     dt = new_t - ddg_search.t
 
-    ddg_search.t = new_t
+    google_search.t = new_t
 
     if dt < 5:
         time.sleep(5 - dt)
 
-    url = "http://msxml.excite.com/search/web?q=" + quote(query.replace(" ", "+"), safe = "")
-    htm = lxml.html.parse(urlopen(Request(url, headers = HTTP_HEADER)))
+    url = "https://serpapi.com/search.json?hl=en&gl=us&q=" + quote(query.replace(" ", "+"), safe = "")
 
-    return [unquote(a.get("href")
-            for a in htm.xpath("//a[@class=\"resultTitle\"]")]
+    with urlopen(url) as request:
+        r = json.loads(request.read())
 
-ddg_search.t = time.clock()
+    return [x["link"] for x in r["organic_results"]]
+
+# Finds the closest match to str0 in the iterable strs
+def fuzzy_match(str0, strs):
+    def normalize(s):
+        stemmer = nltk.stem.PorterStemmer()
+        words = nltk.tokenize.wordpunct_tokenize(s.lower().strip())
+
+        return ' '.join([stemmer.stem(w) for w in words])
+
+    str0_norm = normalize(str0)
+
+    def edit_distance(s):
+        return nltk.edit_distance(str0_norm, normalize(s))
+
+    match = list(sorted(strs, key = edit_distance))
+    return match[0]
+
+google_search.t = time.clock()
 
 import csv
 import sys
-
 
 if __name__ == "__main__":
     csvin = csv.reader(sys.stdin)
@@ -130,17 +122,11 @@ if __name__ == "__main__":
         match = None
 
         try:
-            for url in ddg_search(orow[0])[:5]:
-                regex = REGEX_TWITTER.match(url)
-
-                if regex is not None:
-                    match = regex.group("username")
-                    break
-
+            for url in google_search(orow[0]):
                 handles += twittercrawl(url, visited = visited, depth = 20)
 
-            if match is None:
-                match = twitterfilter(handles, [orow[0], "power"])
+            if handles:
+                match = fuzzy_match(orow[0], handles)
         except Exception:
             pass
 
