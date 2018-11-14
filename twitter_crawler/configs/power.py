@@ -1,5 +1,5 @@
 # Collection to save to
-COLLNAME = ""
+COLLNAME = "rawAMiscPower"
 
 # Keywords to search for in both old and new tweets
 KEYWORDS = [
