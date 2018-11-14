@@ -61,14 +61,13 @@ def put_statuses_into_collection(collname, qu):
         coll.delete_many({'_id': {'$in': dups}})
 
 if __name__ == "__main__":
-    def usage():
-        print("Usage: " + sys.argv[0] + "[-u <usernames>] [-k <keywords>] -o <output_coll>")
+    if len(sys.argv) != 2:
+        print("Usage: " + sys.argv[0] + "<config_file.py>")
         exit(-1)
 
     qu = queue.SimpleQueue()
     ev = threading.Event()
 
-    # Modify this to whatever you need
     pool = []
 
     def sigint(sig, frame):
@@ -82,35 +81,15 @@ if __name__ == "__main__":
 
     signal.signal(signal.SIGINT, sigint)
 
-    keywords = []
-    usernames = []
-    old_keywords = []
-    old_usernames = []
-    new_keywords = []
-    new_usernames = []
-    output_coll = None
+    opts = {}
+    with open(sys.argv[1], "r") as fd:
+        exec(fd.read(), opts)
 
-    for flag, query in zip(sys.argv[1::2], sys.argv[2::2]):
-        switch = {
-            "-u": lambda: usernames += query.split(","),
-            "-k": lambda: keywords += query.split(","),
-            "-U": lambda: new_usernames += query.split(","),
-            "-K": lambda: new_keywords += query.split(","),
-            "-v": lambda: old_usernames += query.split(","),
-            "-j": lambda: old_keywords += query.split(","),
-            "-o": lambda: output_coll = query if output_coll is None else usage
-        }
+    old_keywords = opts["KEYWORDS"] + opts["OLD_KEYWORDS"]
+    new_keywords = opts["KEYWORDS"] + opts["NEW_KEYWORDS"]
 
-        switch.get(flag, usage)()
-
-    if output_coll is None:
-        usage()
-
-    old_keywords += keywords
-    new_keywords += keywords
-
-    old_usernames += usernames
-    new_usernames += usernames
+    old_usernames = opts["USERNAMES"] + opts["OLD_USERNAMES"]
+    new_usernames = opts["USERNAMES"] + opts["NEW_USERNAMES"]
 
     if old_keywords:
         pool.append(OldKeywordThread(old_keywords, qu, ev))
@@ -128,4 +107,4 @@ if __name__ == "__main__":
         pool.append(NewUsernameThread(new_usernames, qu, ev))
         pool[-1].start()
 
-    put_statuses_into_collection(output_coll, qu)
+    put_statuses_into_collection(opts["COLLNAME"], qu)
