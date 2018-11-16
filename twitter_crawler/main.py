@@ -8,9 +8,9 @@ import threading
 import pymongo
 import tweepy
 
-from .common import MONGODB_HOST
-from .oldtweets import OldKeywordThread, OldUsernameThread
-from .newtweets import NewKeywordThread, NewUsernameThread
+from common import now, MONGODB_HOST
+from oldtweets import OldKeywordThread, OldUsernameThread
+from newtweets import NewKeywordThread, NewUsernameThread
 
 def print_status(status, *args, **kwargs):
     print("\"%s\" -- @%s, %s (retrieved %s)" % (
@@ -62,7 +62,7 @@ def put_statuses_into_collection(collname, qu):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: " + sys.argv[0] + "<config_file.py>")
+        print("Usage: " + sys.argv[0] + "<config_file.py>", file = sys.stderr)
         exit(-1)
 
     qu = queue.SimpleQueue()

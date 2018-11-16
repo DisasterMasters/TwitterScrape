@@ -1,11 +1,12 @@
 import copy
 import re
+import threading
 from urllib.request import urlopen
 from urllib.parse import urlencode
 
 import tweepy
 
-from .common import *
+from common import now, TWITTER_AUTH
 
 # Convert tweets obtained with extended REST API to a format similar to the
 # compatibility mode used by the streaming API
@@ -93,7 +94,7 @@ class OldKeywordThread(threading.Thread):
         max_id = None
 
         while not self.ev.wait(1):
-            result = self.api.search(
+            results = self.api.search(
                 " OR ".join(self.queries),
                 result_type = "mixed",
                 max_id = max_id,
@@ -104,17 +105,21 @@ class OldKeywordThread(threading.Thread):
             )
 
             timestamp = now()
+            statuses = [extended_to_compat(status) for status in results["statuses"]]
 
             if not statuses:
                 break
 
-            self.qu.put(([extended_to_compat(status) for status in results["statuses"]], timestamp))
+            self.qu.put((statuses, timestamp))
 
             max_id_match = OldKeywordThread.max_id_regex.search(results["search_metadata"]["next_results"])
             if max_id_match is not None:
                 max_id = int(max_id_match.group("max_id"))
             else:
-                max_id = statuses[-1]["id"] - 1
+                max_id = min(statuses, key = lambda r: r["id"])["id"] - 1
+
+            # For debugging
+            #print("\033[1m\033[31mGot some old tweets\033[0m (New max_id %d)" % max_id)
 
 class OldUsernameThread(threading.Thread):
     def __init__(self, queries, qu, ev):
