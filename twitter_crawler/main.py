@@ -65,9 +65,12 @@ if __name__ == "__main__":
         print("Usage: " + sys.argv[0] + "<config_file.py>", file = sys.stderr)
         exit(-1)
 
-    qu = queue.SimpleQueue()
-    ev = threading.Event()
+    try:
+        qu = queue.SimpleQueue()
+    except AttributeError: # Fix for Python 3.6
+        qu = queue.Queue()
 
+    ev = threading.Event()
     pool = []
 
     def sigint(sig, frame):
