@@ -1,4 +1,3 @@
-import datetime
 import socket
 
 import tweepy
@@ -13,6 +12,3 @@ TWITTER_AUTH.set_access_token(
 )
 
 MONGODB_HOST = "da1.eecs.utk.edu" if socket.gethostname() == "75f7e392a7ec" else "localhost"
-
-def now():
-    return datetime.datetime.utcnow().replace(tzinfo = datetime.timezone.utc)

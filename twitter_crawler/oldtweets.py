@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 
 import tweepy
 
-from common import now, TWITTER_AUTH
+from common import TWITTER_AUTH
 
 # Convert tweets obtained with extended REST API to a format similar to the
 # compatibility mode used by the streaming API
@@ -104,7 +104,7 @@ class OldKeywordThread(threading.Thread):
                 wait_on_rate_limit = True
             )
 
-            timestamp = now()
+            timestamp = datetime.datetime.utcnow().replace(tzinfo = datetime.timezone.utc)
             statuses = [extended_to_compat(status) for status in results["statuses"]]
 
             if not statuses:
@@ -145,7 +145,7 @@ class OldUsernameThread(threading.Thread):
                     wait_on_rate_limit = True
                 )
 
-                timestamp = now()
+                timestamp = datetime.datetime.utcnow().replace(tzinfo = datetime.timezone.utc)
 
                 if not statuses:
                     break

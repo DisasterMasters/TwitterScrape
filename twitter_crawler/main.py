@@ -1,5 +1,5 @@
 import contextlib
-from email.utils import format_datetime
+from email.utils import format_datetime, parsedate_to_datetime
 import queue
 import signal
 import sys
@@ -8,43 +8,60 @@ import threading
 import pymongo
 import tweepy
 
-from common import now, MONGODB_HOST
+from common import MONGODB_HOST
 from oldtweets import OldKeywordThread, OldUsernameThread
 from newtweets import NewKeywordThread, NewUsernameThread
 
-def print_status(status, *args, **kwargs):
-    print("\"%s\" -- @%s, %s (retrieved %s)" % (
-        status["text"],
-        status["user"]["screen_name"],
-        status["created_at"],
-        status["retrieved_at"]
-    ), *args, **kwargs)
+def process(status, timestamp):
+    status["created_at"] = parsedate_to_datetime(status["created_at"])
+    status["user"]["created_at"] = parsedate_to_datetime(status["user"]["created_at"])
+    if "quoted_status" in status:
+        status["quoted_status"]["created_at"] = parsedate_to_datetime(status["quoted_status"]["created_at"])
+
+    status["retrieved_at"] = timestamp
 
 def put_statuses_into_collection(collname, qu):
     with contextlib.closing(pymongo.MongoClient(MONGODB_HOST)) as conn:
         coll = conn['twitter'][collname]
 
         # Make tweets indexable by id and text fields
-        coll.create_index([('id', pymongo.HASHED)], name = 'id_index')
-        coll.create_index([('id', pymongo.ASCENDING)], name = 'id_ordered_index')
-        coll.create_index([('text', pymongo.TEXT)], name = 'search_index', default_language = 'english')
+        indices = [
+            pymongo.IndexModel([('id', pymongo.HASHED)], name = 'id_index'),
+            pymongo.IndexModel([('user.id', pymongo.HASHED)], name = 'user_id_index'),
+            pymongo.IndexModel([('user.screen_name', pymongo.HASHED)], name = 'user_screen_name_index'),
+            pymongo.IndexModel([('text', pymongo.TEXT)], name = 'text_index', default_language = 'english'),
+            pymongo.IndexModel([('created_at', pymongo.ASCENDING)], name = 'created_at_index'),
+            pymongo.IndexModel([('categories', pymongo.ASCENDING)], name = 'categories_index', sparse = True)
+        ]
+
+        coll.create_indexes(indices)
 
         while True:
             status, timestamp = qu.get()
-            retrieved_at = format_datetime(timestamp)
 
             if status is None:
                 print("SIGINT received at " + retrieved_at)
                 break
             elif type(status) is list and type(status[0]) is dict:
                 for r in status:
-                    r["retrieved_at"] = retrieved_at
-                    print_status(r)
+                    print("\"%s\" -- @%s, %s (retrieved %s)" % (
+                        r["text"],
+                        r["user"]["screen_name"],
+                        r["created_at"],
+                        format_datetime(timestamp)
+                    )
+
+                    process(r, timestamp)
 
                 coll.insert_many(status, ordered = False)
             elif type(status) is dict:
-                status["retrieved_at"] = retrieved_at
-                print_status(status)
+                print("\"%s\" -- @%s, %s (retrieved %s)" % (
+                    status["text"],
+                    status["user"]["screen_name"],
+                    status["created_at"],
+                    format_datetime(timestamp)
+                )
+                process(status, timestamp)
 
                 coll.insert_one(status)
 
@@ -80,7 +97,7 @@ if __name__ == "__main__":
         for i in pool:
             i.join()
 
-        qu.put((None, timestamp))
+        qu.put((None, datetime.datetime.utcnow()))
 
     signal.signal(signal.SIGINT, sigint)
 

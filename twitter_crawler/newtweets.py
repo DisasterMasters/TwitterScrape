@@ -3,7 +3,7 @@ import time
 
 import tweepy
 
-from common import now, TWITTER_AUTH
+from common import TWITTER_AUTH
 
 class QueueListener(tweepy.StreamListener):
     def __init__(self, qu, ev):
@@ -14,7 +14,7 @@ class QueueListener(tweepy.StreamListener):
         self.ev = ev
 
     def on_status(self, status):
-        timestamp = now()
+        timestamp = datetime.datetime.utcnow().replace(tzinfo = datetime.timezone.utc)
 
         #self.qu.put((status, timestamp))
         self.qu.put((status._json, timestamp))
