@@ -1,6 +1,6 @@
 require 'json'
 
-INPUT_DIR = "/home/jball/Desktop/TweetScraper/Data/tweet"
+INPUT_DIR = "/Data/tweet"
 
 key_to_column = Hash.new
 current_row = Array.new
