@@ -14,7 +14,10 @@ except ImportError:
 
 from datetime import datetime
 
-from TweetScraper.items import Tweet, User
+import sys
+sys.path.insert(0, 'TwitterScrape.Scraper.TweetScraper.items')
+
+from TwitterScrape.Scraper.TweetScraper.items import Tweet, User
 
 logger = logging.getLogger(__name__)
 
