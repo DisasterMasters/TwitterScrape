@@ -3,6 +3,7 @@ from tweepy import OAuthHandler
 from tweepy import Stream
 import fileinput
 import json
+from time import time
 
 import twitter_creds
 
@@ -51,20 +52,32 @@ class TwitterListener(StreamListener):
         self.fetched_tweets_filename = fetched_tweets_filename
 
     def on_data(self, data):
+        global count
         try:
             #print(data)
             with open(self.fetched_tweets_filename, 'a') as tf:
                 #now find out if tweets are news related
                 read_data = json.loads(data)
-                for mentioned_user in read_data["entities"]["user_mentions"]:
-                    if mentioned_user["screen_name"] not in NewsList and mentioned_user["screen_name"] not in Found_Users:
-                        string = mentioned_user["screen_name"] + '\n'
-                        tf.write(string)
-                        Found_Users.add(mentioned_user["screen_name"])
+                if len(read_data["entities"]["user_mentions"]) is not 0:
+                    for mentioned_user in read_data["entities"]["user_mentions"]:
+                        if mentioned_user["screen_name"] not in NewsList and mentioned_user["screen_name"] not in Found_Users:
+                            string = mentioned_user["screen_name"] + '\n'
+                            #print(mentioned_user)
+                            #tf.write(json.dumps(api.get_user(mentioned_user["id"])))
+                            tf.write(string)
+                            count += 1
+                            #tf.write('\n')
+                            #tf.write('\n')
+                            Found_Users.add(mentioned_user["screen_name"])
                 if 'retweeted_status' in read_data:
                     if read_data["retweeted_status"]["user"]["screen_name"] not in NewsList and read_data["retweeted_status"]["user"]["screen_name"] not in Found_Users:
                         string = read_data["retweeted_status"]["user"]["screen_name"] + '\n'
+                        #print(read_data["retweeted_status"]["user"])
+                        #tf.write(json.dumps(read_data["retweeted_status"]["user"]))
                         tf.write(string)
+                        count += 1
+                        #tf.write('\n')
+                        #tf.write('\n')
                         Found_Users.add(read_data["retweeted_status"]["user"]["screen_name"])
             return True
         except BaseException as e:
@@ -79,9 +92,19 @@ class TwitterListener(StreamListener):
 
 
 if __name__ == '__main__':
-    
+
+    global count
+    count = 0
     keyword_list = ["donald trump", "hillary clinton", "barack obama", "bernie sanders"] #change this according to disaster of current interest
-    fetched_tweets_filename = "Found_Users"
+    fetched_tweets_filename = "Found_Users.txt"
 
     twitter_streamer = TwitterStreamer()
-    twitter_streamer.stream_tweets(fetched_tweets_filename, keyword_list)
+    try:
+        start = time()
+        twitter_streamer.stream_tweets(fetched_tweets_filename, keyword_list)
+    except KeyboardInterrupt:
+        stop = time()
+        elapsed = stop - start
+        elapsed = int(elapsed)
+        print('\n')
+        print("Streaming API gave about", (count / elapsed)*60, "users per minute.\n")

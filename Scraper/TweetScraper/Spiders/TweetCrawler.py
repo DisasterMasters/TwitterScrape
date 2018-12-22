@@ -1,6 +1,6 @@
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.selector import Selector
-from scrapy.conf import settings
+from scrapy.crawler import settings
 from scrapy import http
 from scrapy.shell import inspect_response  # for debugging
 import re
