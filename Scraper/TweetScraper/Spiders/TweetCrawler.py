@@ -15,9 +15,9 @@ except ImportError:
 from datetime import datetime
 
 import sys
-#sys.path.append('/home/sai/TwitterScrape/Scraper/TweetScraper') #Add and Change this to the path of the directory where items.py lives in
+sys.path.append('/home/sai/TwitterScrape/Scraper/TweetScraper') #Add and Change this to the path of the directory where items.py lives in
 
-from TweetScraper.itemsitems import Tweet, User #If unable to import, add the sys.path.aappend line above and remove TweetScraper so it will look for items within that dir
+from items import Tweet, User #If unable to import, add the sys.path.append line above and remove the /TweetScraper so it will look for items.py within that dir
 
 logger = logging.getLogger(__name__)
 
