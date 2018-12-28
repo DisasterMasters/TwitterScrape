@@ -6,8 +6,8 @@ import pymongo
 import json
 import os
 
-from TweetScraper.items import Tweet, User
-from TweetScraper.utils import mkdirs
+from items import Tweet, User
+from utils import mkdirs
 
 
 logger = logging.getLogger(__name__)
@@ -20,8 +20,8 @@ class SaveToMongoPipeline(object):
         db = connection[settings['MONGODB_DB']]
         self.tweetCollection = db[settings['MONGODB_TWEET_COLLECTION']]
 
-        coll.ensure_index([('id', pymongo.ASCENDING)], name = 'id_index')
-        coll.ensure_index([('text', pymongo.TEXT)], name = 'search_index', default_language = 'english')
+        db.collection.ensure_index([('id', pymongo.ASCENDING)], name = 'id_index')
+        db.collection.ensure_index([('text', pymongo.TEXT)], name = 'search_index', default_language = 'english')
 
     def process_item(self, item, spider):
         if isinstance(item, Tweet):

@@ -8,10 +8,10 @@ BOT_NAME = 'TweetScraper'
 LOG_LEVEL = 'INFO'
 DOWNLOAD_HANDLERS = {'s3': None,} # from http://stackoverflow.com/a/31233576/2297751, TODO
 
-SPIDER_MODULES = ['TweetScraper.spiders']
-NEWSPIDER_MODULE = 'TweetScraper.spiders'
+SPIDER_MODULES = ['TweetScraper.Spiders']
+NEWSPIDER_MODULE = 'TweetScraper.Spiders'
 ITEM_PIPELINES = {
-    'TweetScraper.pipelines.SaveToFilePipeline':100,
+    #'TweetScraper.pipelines.SaveToFilePipeline':100,
     #'TweetScraper.pipelines.SaveToMongoPipeline':100, # replace `SaveToFilePipeline` with this to use MongoDB
 }
 
