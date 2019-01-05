@@ -58,9 +58,11 @@ class TwitterListener(StreamListener):
             with open(self.fetched_tweets_filename, 'a') as tf:
                 #now find out if tweets are news related
                 read_data = json.loads(data)
+                formatted_list = [x.lower() for x in NewsList]
+                formatted_list = [x.replace('\n', '') for x in formatted_list]
                 if len(read_data["entities"]["user_mentions"]) is not 0:
                     for mentioned_user in read_data["entities"]["user_mentions"]:
-                        if mentioned_user["screen_name"] not in NewsList and mentioned_user["screen_name"] not in Found_Users:
+                        if (mentioned_user["screen_name"]).lower() not in formatted_list and mentioned_user["screen_name"] not in Found_Users:
                             string = mentioned_user["screen_name"] + '\n'
                             #print(mentioned_user)
                             #tf.write(json.dumps(api.get_user(mentioned_user["id"])))
@@ -70,7 +72,7 @@ class TwitterListener(StreamListener):
                             #tf.write('\n')
                             Found_Users.add(mentioned_user["screen_name"])
                 if 'retweeted_status' in read_data:
-                    if read_data["retweeted_status"]["user"]["screen_name"] not in NewsList and read_data["retweeted_status"]["user"]["screen_name"] not in Found_Users:
+                    if (read_data["retweeted_status"]["user"]["screen_name"]).lower() not in formatted_list and read_data["retweeted_status"]["user"]["screen_name"] not in Found_Users:
                         string = read_data["retweeted_status"]["user"]["screen_name"] + '\n'
                         #print(read_data["retweeted_status"]["user"])
                         #tf.write(json.dumps(read_data["retweeted_status"]["user"]))
@@ -95,10 +97,13 @@ if __name__ == '__main__':
 
     global count
     count = 0
-    keyword_list = ["donald trump", "hillary clinton", "barack obama", "bernie sanders"] #change this according to disaster of current interest
-    fetched_tweets_filename = "Found_Users.txt"
+    keyword_list = []
+    for keyword in fileinput.input('keyword_list.txt'):
+        keyword_list.append(keyword)
+    fetched_tweets_filename = "Users_Found_by_API.txt"
 
     twitter_streamer = TwitterStreamer()
+
     try:
         start = time()
         twitter_streamer.stream_tweets(fetched_tweets_filename, keyword_list)
