@@ -1,6 +1,9 @@
 mashable
+nbcnews
+usnews
 big_picture
 theonion
+TheAtlantic
 time
 breakingnews
 bbcbreaking
@@ -75,6 +78,7 @@ usabreakingnews
 vanityfairmag
 cw_network
 bbcworld
+WashTimes
 abc
 themoment
 socialmedia2day
@@ -98,6 +102,7 @@ newyorkpost
 discovermag
 sciencenewsorg
 NWS
+AOL
 NOAANCEIclimate
 NOAASatellites
 MWObs
@@ -195,7 +200,6 @@ KarlTheFog
 NWSPodunk
 stormchasernick
 BreakingNews
-BBCBreaking
 cnnbrk
 WSJbreakingnews
 ReutersLive
@@ -207,7 +211,11 @@ TWCBreaking
 AP
 googlenews
 redditworldnews
+<<<<<<< Updated upstream
 Reuters
 timesofindia
 CNNEE
 XHNews
+=======
+Reuters
+>>>>>>> Stashed changes

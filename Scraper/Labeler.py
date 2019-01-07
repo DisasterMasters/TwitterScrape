@@ -4,6 +4,34 @@ import fileinput
 import twitter_creds
 import nltk
 import pickle
+from nltk.classify.scikitlearn import SklearnClassifier
+from sklearn.naive_bayes import MultinomialNB, GaussianNB, BernoulliNB
+from sklearn.linear_model import LogisticRegression, SGDClassifier
+from sklearn.svm import LinearSVC, NuSVC
+from statistics import mode
+from nltk.classify import ClassifierI
+from random import shuffle
+
+# # # # THIS CLASS IS USED TO DETERMINE CONFIDENCE AND INCREASE CLASSIFICATION RELIABILITY # # # #
+class VoteClassifier(ClassifierI):
+    def __init__(self, *classifiers):
+        self._classifiers = classifiers
+
+    def classify(self, features):
+        votes = []
+        for c in self._classifiers:
+            v = c.classify(features)
+            votes.append(v)
+        return mode(votes)
+
+    def confidence(self, features):
+        votes = []
+        for c in self._classifiers:
+            v = c.classify(features)
+            votes.append(v)
+        choice_votes = votes.count(mode(votes))
+        conf = choice_votes / len(votes)
+        return conf
 
 # # # # TWITTER AUTHORIZATION # # # #
 auth = OAuthHandler(twitter_creds.CONSUMER_KEY, twitter_creds.CONSUMER_SECRET)
@@ -43,7 +71,8 @@ for news_user in fileinput.input('NewsList.txt'):
         news_user = api.get_user(news_user)
         labeled_users[news_user] = 'news'
     except tweepy.error.TweepError as e:
-        print(e)
+        #print(e)
+        pass
 
 # # # # KNOWN NON NEWS ACCOUNTS # # # #
 for non_news_user in fileinput.input('non_news_users.txt'):
@@ -58,11 +87,10 @@ for non_news_user in fileinput.input('non_news_users.txt'):
 for found_user in fileinput.input('Users_Found_by_API.txt'):
     try:
         found_user = api.get_user(found_user)
-        test_dict[]
 '''
 
 # # # # FINDING MOST COMMON WORDS # # # #
-all_news_words = []
+all_words = []
 for user_object in labeled_users.keys():
     bio = (user_object._json)['description']
     if bio is not None:
@@ -70,26 +98,57 @@ for user_object in labeled_users.keys():
         bio = nltk.word_tokenize(bio)
         for word in bio:
             word = word.lower()
-            all_news_words.append(word)
-all_news_words = nltk.FreqDist(all_news_words)
+            all_words.append(word)
+all_words = nltk.FreqDist(all_words)
 
 # # # # MAKING A FEATURE SET FOR EACH BIO BASED ON MOST COMMON WORDS # # # #
-f = open('TrainingSet', 'w')
-top_words = [w for w in all_news_words.most_common(100)]
+top_words = [w for w in all_words.most_common(100)]
 featuresets = []
 for user_object, category in labeled_users.items():
     bio = (user_object._json)['description']
     if bio is not None:
         bio = nltk.word_tokenize(bio)
         featuresets.append((find_features(bio), category))
-        #f.write(str(featuresets))
 
-# # # # NAIVE BAYES LABELING # # # #
-#print(len(featuresets))
-training_set = featuresets[:250]
-#print(len(training_set))
-testing_set = featuresets[250:]
-#print(training_set)
+shuffle(featuresets)
+training_set = featuresets[:280]
+testing_set = featuresets[280:]
+
+# # # # DIFFERENT CLASSIFIERS THAT WILL BE USED FOR VOTING SYSTEM # # # #
 classifier = nltk.NaiveBayesClassifier.train(training_set)
-print('Classifier accuracy:', (nltk.classify.accuracy(classifier, testing_set))*100)
-classifier.show_most_informative_features(30)
+print('Original classifier accuracy:', (nltk.classify.accuracy(classifier, testing_set))*100)
+
+BernoulliNB_classifier = SklearnClassifier(BernoulliNB())
+BernoulliNB_classifier.train(training_set)
+print('Bernoulli classifier accuracy:', (nltk.classify.accuracy(BernoulliNB_classifier, testing_set))*100)
+
+LinearSVC_classifier = SklearnClassifier(LinearSVC())
+LinearSVC_classifier.train(training_set)
+print('Linear SVC classifier accuracy:', (nltk.classify.accuracy(LinearSVC_classifier, testing_set))*100)
+
+# MNB_classifier = SklearnClassifier(MultinomialNB())
+# MNB_classifier.train(training_set)
+# print('MNB classifier accuracy:', (nltk.classify.accuracy(MNB_classifier, testing_set))*100)
+
+# SGDClassifier_classifier = SklearnClassifier(SGDClassifier(max_iter=20, tol=1e-3))
+# SGDClassifier_classifier.train(training_set)
+# print('SGD classifier accuracy:', (nltk.classify.accuracy(SGDClassifier_classifier, testing_set))*100)
+
+# GaussianNB_classifier = SklearnClassifier(GaussianNB())
+# GaussianNB_classifier.train(training_set)
+# print('Gaussian classifier accuracy:', (nltk.classify.accuracy(GaussianNB_classifier, testing_set))*100)
+
+# LogisticRegression_classifier = SklearnClassifier(LogisticRegression(solver='lbfgs'))
+# LogisticRegression_classifier.train(training_set)
+# print('Logistic Regression classifier accuracy:', (nltk.classify.accuracy(LogisticRegression_classifier, testing_set))*100)
+
+# SVC_classifier = SklearnClassifier(SVC(gamma='scale'))
+# SVC_classifier.train(training_set)
+# print('SVC classifier accuracy:', (nltk.classify.accuracy(SVC_classifier, testing_set))*100)
+
+# NuSVC_classifier = SklearnClassifier(NuSVC(gamma='scale'))
+# NuSVC_classifier.train(training_set)
+# print('NuSVC classifier accuracy:', (nltk.classify.accuracy(NuSVC_classifier, testing_set))*100)
+
+voted_classifier = VoteClassifier(classifier, BernoulliNB_classifier, LinearSVC_classifier)
+print('Voted classifier accuracy:', (nltk.classify.accuracy(voted_classifier, testing_set))*100)

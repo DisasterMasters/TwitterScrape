@@ -13,7 +13,6 @@ Found_Users = set()
 for newshandle in fileinput.input('NewsList.txt'):
     NewsList.add(newshandle)
 
-
 # # # # TWITTER AUTHENTICATOR # # # #
 class TwitterAuthenticator():
 
