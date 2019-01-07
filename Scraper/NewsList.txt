@@ -23,7 +23,7 @@ lifehacker
 foxnews
 waitwait
 newsweek
-huffingtonpost
+HuffPost
 newscientist
 mental_floss
 theeconomist
@@ -208,3 +208,6 @@ AP
 googlenews
 redditworldnews
 Reuters
+timesofindia
+CNNEE
+XHNews
