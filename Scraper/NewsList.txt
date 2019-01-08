@@ -30,6 +30,7 @@ HuffPost
 newscientist
 mental_floss
 theeconomist
+ndtv
 emarketer
 engadget
 cracked
@@ -38,13 +39,18 @@ bbcclick
 fastcompany
 reuters
 incmagazine
+BBCNews
+abpnewstv
 eonline
 rww
+tvOneNews
+TimesNow
 gdgt
 instyle
 mckquarterly
 enews
 nprnews
+NPR
 usatoday
 mtv
 freakonomics
@@ -170,6 +176,7 @@ mapgirl18
 TropicalTidbits
 mattlanza
 WesternMEwx
+cnni
 NOAABrauer
 philklotzbach
 AbainzaRalph
@@ -211,11 +218,7 @@ TWCBreaking
 AP
 googlenews
 redditworldnews
-<<<<<<< Updated upstream
-Reuters
 timesofindia
 CNNEE
 XHNews
-=======
-Reuters
->>>>>>> Stashed changes
+AJArabic

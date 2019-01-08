@@ -49,11 +49,13 @@ class TwitterListener(StreamListener):
 
     def __init__(self, fetched_tweets_filename):
         self.fetched_tweets_filename = fetched_tweets_filename
+        self.siesta = 0
+        self.nightnight = 0
 
     def on_data(self, data):
         global count
         try:
-            #print(data)
+            print(data)
             with open(self.fetched_tweets_filename, 'a') as tf:
                 #now find out if tweets are news related
                 read_data = json.loads(data)
@@ -86,10 +88,32 @@ class TwitterListener(StreamListener):
         return True
 
     def on_error(self, status):
-        if status == 420:
-            # this keeps us from straining our rate limit so we don't get kicked out
-            return False
-        print(status)
+        '''
+        *******************************************************************
+        From Twitter Streaming API Documentation
+        420: Rate Limited
+        The client has connected too frequently. For example, an
+        endpoint returns this status if:
+        - A client makes too many login attempts in a short period
+          of time.
+        - Too many copies of an application attempt to authenticate
+          with the same credentials.
+        *******************************************************************
+        '''
+        print('Error:', str(status_code))
+        if status_code == 420:
+            sleepy = 60 * math.pow(2, self.siesta)
+            print(time.strftime("%Y%m%d_%H%M%S"))
+            print("A reconnection attempt will occur in " + str(sleepy / 60) + " minutes.")
+            time.sleep(sleepy)
+            self.siesta += 1
+        else:
+            sleepy = 5 * math.pow(2, self.nightnight)
+            print(time.strftime("%Y%m%d_%H%M%S"))
+            print("A reconnection attempt will occur in " + str(sleepy) + " seconds.")
+            time.sleep(sleepy)
+            self.nightnight += 1
+        return True
 
 
 if __name__ == '__main__':

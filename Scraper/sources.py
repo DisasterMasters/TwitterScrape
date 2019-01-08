@@ -10,7 +10,7 @@ api = tweepy.API(auth)
 
 labeled_users = dict()
  
-for news_user in fileinput.input('/home/sai/TwitterScrape/Scraper/NewsList.txt'):
+for news_user in fileinput.input('NewsList.txt'):
     try:
         news_user = api.get_user(news_user)
         labeled_users[news_user] = 'news'
@@ -22,9 +22,8 @@ for news_user in fileinput.input('/home/sai/TwitterScrape/Scraper/NewsList.txt')
 
 def filter(user):
     if(user._json)['protected'] is False:
-        if((user._json)['followers_count'] > 700):
-            if(user._json)['verified'] is True:
-                if(user._json)['url'] is not None:
+        if((user._json)['followers_count'] > 700) or ((user._json)['verified'] is True):
+            if(user._json)['url'] is not None:
                     return True
     return False
 

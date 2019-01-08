@@ -169,7 +169,6 @@ salman_alodah
 bts_bighit
 Asli_Jacqueline
 facebook
-AJArabic
 RT_Erdogan
 ObamaWhiteHouse
 mangeshkarlata
@@ -255,7 +254,6 @@ RanveerOfficial
 SaudiNews50
 cinema21
 TEDTalks
-ndtv
 SabrinaSato
 NabilAlawadhy
 billmaher
@@ -319,7 +317,6 @@ gusttavo_lima
 AustinMahone
 TareqAlSuwaidan
 cesc4official
-BBCNews
 LukeBryanOnline
 connorfranta
 RockstarGames
@@ -369,7 +366,6 @@ SidMalhotra
 MacMiller
 RaffiAhmadLagi
 GautamGambhir
-TimesNow
 Pitty
 LuceroMexico
 MirzaSania
@@ -397,7 +393,6 @@ Microsoft
 raisa6690
 Alhilal_FC
 Burberry
-tvOneNews
 carrieunderwood
 ICC
 steveaoki
@@ -412,7 +407,6 @@ RahulGandhi
 BCCI
 MonsieurDream
 AristeguiOnline
-cnni
 France24_ar
 VEJA
 NoticiasCaracol
@@ -426,7 +420,6 @@ Discovery
 basuki_btp
 Dior
 SenSanders
-abpnewstv
 FabioPorchat
 officialjaden
 lemondefr
@@ -459,7 +452,6 @@ Nike
 juanmata8
 aajtak
 imdanielpadilla
-NPR
 MoSalah
 abdulrahman
 cocielo

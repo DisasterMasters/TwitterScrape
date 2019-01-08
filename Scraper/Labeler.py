@@ -12,6 +12,14 @@ from statistics import mode
 from nltk.classify import ClassifierI
 from random import shuffle
 
+# # # # THIS HELPS DETERMINE A NEWS ACCOUNT # # # #
+def filter(user):
+    if(user._json)['protected'] is False:
+        if((user._json)['followers_count'] > 700) or ((user._json)['verified'] is True):
+            if(user._json)['url'] is not None:
+                    return True
+    return False
+
 # # # # THIS CLASS IS USED TO DETERMINE CONFIDENCE AND INCREASE CLASSIFICATION RELIABILITY # # # #
 class VoteClassifier(ClassifierI):
     def __init__(self, *classifiers):
@@ -71,8 +79,7 @@ for news_user in fileinput.input('NewsList.txt'):
         news_user = api.get_user(news_user)
         labeled_users[news_user] = 'news'
     except tweepy.error.TweepError as e:
-        #print(e)
-        pass
+        print(e)
 
 # # # # KNOWN NON NEWS ACCOUNTS # # # #
 for non_news_user in fileinput.input('non_news_users.txt'):
@@ -81,13 +88,6 @@ for non_news_user in fileinput.input('non_news_users.txt'):
         labeled_users[non_news_user] = 'non'
     except tweepy.error.TweepError as e:
         print(e)
-
-# # # # FOUND ACCOUNTS WITH STREAMING API # # # #
-'''
-for found_user in fileinput.input('Users_Found_by_API.txt'):
-    try:
-        found_user = api.get_user(found_user)
-'''
 
 # # # # FINDING MOST COMMON WORDS # # # #
 all_words = []
@@ -111,20 +111,20 @@ for user_object, category in labeled_users.items():
         featuresets.append((find_features(bio), category))
 
 shuffle(featuresets)
-training_set = featuresets[:280]
-testing_set = featuresets[280:]
+training_set = featuresets
+# testing_set = featuresets[280:]
 
 # # # # DIFFERENT CLASSIFIERS THAT WILL BE USED FOR VOTING SYSTEM # # # #
 classifier = nltk.NaiveBayesClassifier.train(training_set)
-print('Original classifier accuracy:', (nltk.classify.accuracy(classifier, testing_set))*100)
+# print('Original classifier accuracy:', (nltk.classify.accuracy(classifier, testing_set))*100)
 
 BernoulliNB_classifier = SklearnClassifier(BernoulliNB())
 BernoulliNB_classifier.train(training_set)
-print('Bernoulli classifier accuracy:', (nltk.classify.accuracy(BernoulliNB_classifier, testing_set))*100)
+# print('Bernoulli classifier accuracy:', (nltk.classify.accuracy(BernoulliNB_classifier, testing_set))*100)
 
 LinearSVC_classifier = SklearnClassifier(LinearSVC())
 LinearSVC_classifier.train(training_set)
-print('Linear SVC classifier accuracy:', (nltk.classify.accuracy(LinearSVC_classifier, testing_set))*100)
+# print('Linear SVC classifier accuracy:', (nltk.classify.accuracy(LinearSVC_classifier, testing_set))*100)
 
 # MNB_classifier = SklearnClassifier(MultinomialNB())
 # MNB_classifier.train(training_set)
@@ -151,4 +151,24 @@ print('Linear SVC classifier accuracy:', (nltk.classify.accuracy(LinearSVC_class
 # print('NuSVC classifier accuracy:', (nltk.classify.accuracy(NuSVC_classifier, testing_set))*100)
 
 voted_classifier = VoteClassifier(classifier, BernoulliNB_classifier, LinearSVC_classifier)
-print('Voted classifier accuracy:', (nltk.classify.accuracy(voted_classifier, testing_set))*100)
+# print('Voted classifier accuracy:', (nltk.classify.accuracy(voted_classifier, testing_set))*100)
+
+# # # # FOUND ACCOUNTS WITH STREAMING API # # # #
+for found_user in fileinput.input('Users_Found_by_API.txt'):
+    try:
+        found_user = api.get_user(found_user)
+        bio = (found_user._json)['description']
+        if bio is not None:
+            if filter(found_user) is False:
+                print((found_user._json)['screen_name'] + ' |', end=' ')
+                print(bio + ' |', end=' ')
+                print('non 1.0')
+                continue
+            print((found_user._json)['screen_name'] + ' |', end=' ')
+            print(bio + ' |', end=' ')
+            bio = nltk.word_tokenize(bio)
+            feats = find_features(bio)
+            print(voted_classifier.classify(feats), end=' ')
+            print(voted_classifier.confidence(feats))
+    except tweepy.error.TweepError as e:
+        print(e)
