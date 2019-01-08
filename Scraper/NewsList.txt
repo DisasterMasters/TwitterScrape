@@ -211,11 +211,20 @@ TWCBreaking
 AP
 googlenews
 redditworldnews
-<<<<<<< Updated upstream
 Reuters
 timesofindia
 CNNEE
 XHNews
-=======
-Reuters
->>>>>>> Stashed changes
+AlArabiya
+AJArabic
+CGTNOfficial
+SaudiNews50
+ndtv
+cnnarabic
+BBCNews
+TimesNow
+tvOneNews
+cnni
+abpnewstv
+NPR
+NoticiasRCN

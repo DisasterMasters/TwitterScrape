@@ -87,6 +87,7 @@ class TwitterListener(StreamListener):
 
     def on_error(self, status):
         if status == 420:
+            print(status)
             # this keeps us from straining our rate limit so we don't get kicked out
             return False
         print(status)

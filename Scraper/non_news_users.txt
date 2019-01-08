@@ -157,7 +157,6 @@ UberFacts
 Arsenal
 Alafasy
 shahidkapoor
-AlArabiya
 funnyordie
 TreySongz
 FCBarcelona_es
@@ -169,7 +168,6 @@ salman_alodah
 bts_bighit
 Asli_Jacqueline
 facebook
-AJArabic
 RT_Erdogan
 ObamaWhiteHouse
 mangeshkarlata
@@ -250,12 +248,9 @@ ShraddhaKapoor
 MarcAnthony
 VictoriasSecret
 PaulinaRubio
-CGTNOfficial
 RanveerOfficial
-SaudiNews50
 cinema21
 TEDTalks
-ndtv
 SabrinaSato
 NabilAlawadhy
 billmaher
@@ -285,7 +280,6 @@ carlyraejepsen
 rioferdy5
 Alwaleed_Talal
 BJP4India
-cnnarabic
 Byoussef
 JKCorden
 Metro_TV
@@ -319,7 +313,6 @@ gusttavo_lima
 AustinMahone
 TareqAlSuwaidan
 cesc4official
-BBCNews
 LukeBryanOnline
 connorfranta
 RockstarGames
@@ -369,7 +362,6 @@ SidMalhotra
 MacMiller
 RaffiAhmadLagi
 GautamGambhir
-TimesNow
 Pitty
 LuceroMexico
 MirzaSania
@@ -397,7 +389,6 @@ Microsoft
 raisa6690
 Alhilal_FC
 Burberry
-tvOneNews
 carrieunderwood
 ICC
 steveaoki
@@ -412,7 +403,6 @@ RahulGandhi
 BCCI
 MonsieurDream
 AristeguiOnline
-cnni
 France24_ar
 VEJA
 NoticiasCaracol
@@ -426,7 +416,6 @@ Discovery
 basuki_btp
 Dior
 SenSanders
-abpnewstv
 FabioPorchat
 officialjaden
 lemondefr
@@ -459,7 +448,6 @@ Nike
 juanmata8
 aajtak
 imdanielpadilla
-NPR
 MoSalah
 abdulrahman
 cocielo
@@ -469,5 +457,4 @@ dog_rates
 lopezdoriga
 Swamy39
 mbc1
-NoticiasRCN
 LMFAO
