@@ -55,7 +55,7 @@ class TwitterListener(StreamListener):
     def on_data(self, data):
         global count
         try:
-            print(data)
+            #print(data)
             with open(self.fetched_tweets_filename, 'a') as tf:
                 #now find out if tweets are news related
                 read_data = json.loads(data)

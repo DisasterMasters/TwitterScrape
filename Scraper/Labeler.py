@@ -15,7 +15,7 @@ from random import shuffle
 # # # # THIS HELPS DETERMINE A NEWS ACCOUNT # # # #
 def filter(user):
     if(user._json)['protected'] is False:
-        if((user._json)['followers_count'] > 700) or ((user._json)['verified'] is True):
+        if((user._json)['followers_count'] > 700) and ((user._json)['verified'] is True):
             if(user._json)['url'] is not None:
                     return True
     return False
@@ -112,7 +112,7 @@ for user_object, category in labeled_users.items():
 
 shuffle(featuresets)
 training_set = featuresets
-# testing_set = featuresets[280:]
+#testing_set = featuresets[628:]
 
 # # # # DIFFERENT CLASSIFIERS THAT WILL BE USED FOR VOTING SYSTEM # # # #
 classifier = nltk.NaiveBayesClassifier.train(training_set)
