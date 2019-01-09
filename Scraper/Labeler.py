@@ -4,6 +4,8 @@ import fileinput
 import twitter_creds
 import nltk
 import pickle
+import time
+import datetime
 from nltk.classify.scikitlearn import SklearnClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB, BernoulliNB
 from sklearn.linear_model import LogisticRegression, SGDClassifier
@@ -13,11 +15,24 @@ from nltk.classify import ClassifierI
 from random import shuffle
 
 # # # # THIS HELPS DETERMINE A NEWS ACCOUNT # # # #
+def compare_time(user):
+    UTC = tweepy.API.user_timeline((user._json)['screen_name'], count=1)[0]['created_at']
+    print(UTC)
+    UTC = UTC[:19] + UTC[25:]
+    print(UTC)
+    created = time.strptime(UTC, '%a %b %d %H:%M:%S %Y')
+    now = datetime.datetime.now()[:20]
+    now = time.strptime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
+    created = time.mktime(created)
+    now = time.mktime(now)
+    return int(now-created)/3600 % 24
+
 def filter(user):
     if(user._json)['protected'] is False:
         if((user._json)['followers_count'] > 700) and ((user._json)['verified'] is True):
             if(user._json)['url'] is not None:
-                    return True
+                    if compare_time(user) <= 6:
+                        return True
     return False
 
 # # # # THIS CLASS IS USED TO DETERMINE CONFIDENCE AND INCREASE CLASSIFICATION RELIABILITY # # # #
