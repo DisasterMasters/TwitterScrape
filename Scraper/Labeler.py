@@ -26,7 +26,7 @@ def compare_time(user):
     created = time.mktime(created)
     now = time.mktime(now)
     return int(now-created)/3600 % 24
-
+    
 def filter(user):
     if(user._json)['protected'] is False:
         if((user._json)['followers_count'] > 700) and ((user._json)['verified'] is True):
