@@ -6,6 +6,7 @@ import nltk
 import pickle
 import time
 import datetime
+from email.utils import parsedate_to_datetime
 from nltk.classify.scikitlearn import SklearnClassifier
 from sklearn.naive_bayes import MultinomialNB, GaussianNB, BernoulliNB
 from sklearn.linear_model import LogisticRegression, SGDClassifier
@@ -14,19 +15,25 @@ from statistics import mode
 from nltk.classify import ClassifierI
 from random import shuffle
 
-# # # # THIS HELPS DETERMINE A NEWS ACCOUNT # # # #
 def compare_time(user):
-    UTC = tweepy.API.user_timeline((user._json)['screen_name'], count=1)[0]['created_at']
-    print(UTC)
-    UTC = UTC[:19] + UTC[25:]
-    print(UTC)
-    created = time.strptime(UTC, '%a %b %d %H:%M:%S %Y')
-    now = datetime.datetime.now()[:20]
-    now = time.strptime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-    created = time.mktime(created)
-    now = time.mktime(now)
-    return int(now-created)/3600 % 24
+    # UTC = (((api.user_timeline((user._json)['screen_name'], count=1))[0])._json)['created_at']
+    # UTC = UTC[:19] + UTC[25:]
+    # created = time.strptime(UTC, '%a %b %d %H:%M:%S %Y')
+    # current = (str(datetime.datetime.now()))[:19]
+    # current = time.strptime(current, '%Y-%m-%d %H:%M:%S')
+    # created = time.mktime(created)
+    # current = time.mktime(current)
+    # print("CURRENT TIME: %s", current)
+    # print("CREATED TIME: %s", created)
+    # rv = (int(current-created) / 3600) % 24
+    # print(rv)
+    # return rv
+    tweet_time = parsedate_to_datetime((((api.user_timeline((user._json)['screen_name'], count=1))[0])._json)['created_at'])
+    current_time = datetime.datetime.now()
+    difference = (current_time - tweet_time) / timedelta(hours=1)
+    return difference
 
+# # # # THIS HELPS DETERMINE A NEWS ACCOUNT # # # #
 def filter(user):
     if(user._json)['protected'] is False:
         if((user._json)['followers_count'] > 700) and ((user._json)['verified'] is True):
@@ -75,6 +82,7 @@ def recover_object(obj, filename):
             rv = None
         finally:
             return rv
+# # # #
 
 # # # # THIS MAKES A FEATURE SET # # # #
 def find_features(words_to_check):
@@ -108,7 +116,7 @@ for non_news_user in fileinput.input('non_news_users.txt'):
 all_words = []
 for user_object in labeled_users.keys():
     bio = (user_object._json)['description']
-    if bio is not None:
+    if (bio is not None) or (len(bio) is not 0):
         #print(bio, '\n')
         bio = nltk.word_tokenize(bio)
         for word in bio:
@@ -121,7 +129,7 @@ top_words = [w for w in all_words.most_common(100)]
 featuresets = []
 for user_object, category in labeled_users.items():
     bio = (user_object._json)['description']
-    if bio is not None:
+    if (bio is not None) or (len(bio) is not 0):
         bio = nltk.word_tokenize(bio)
         featuresets.append((find_features(bio), category))
 
@@ -173,7 +181,7 @@ for found_user in fileinput.input('Users_Found_by_API.txt'):
     try:
         found_user = api.get_user(found_user)
         bio = (found_user._json)['description']
-        if bio is not None:
+        if (bio is not None) or (len(bio) is not 0):
             if filter(found_user) is False:
                 print((found_user._json)['screen_name'] + ' |', end=' ')
                 print(bio + ' |', end=' ')
