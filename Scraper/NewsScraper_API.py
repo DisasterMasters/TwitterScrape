@@ -8,10 +8,14 @@ from time import time
 import twitter_creds
 
 NewsList = set()
+non_news = set()
 Found_Users = set()
 
 for newshandle in fileinput.input('NewsList.txt'):
     NewsList.add(newshandle)
+
+for handle in fileinput.input('none_news_users.txt'):
+    non_news.add(handle)
 
 # # # # TWITTER AUTHENTICATOR # # # #
 class TwitterAuthenticator():
@@ -59,11 +63,13 @@ class TwitterListener(StreamListener):
             with open(self.fetched_tweets_filename, 'a') as tf:
                 #now find out if tweets are news related
                 read_data = json.loads(data)
-                formatted_list = [x.lower() for x in NewsList]
-                formatted_list = [x.replace('\n', '') for x in formatted_list]
+                formatted_list1 = [x.lower() for x in NewsList]
+                formatted_list1 = [x.replace('\n', '') for x in formatted_list1]
+                formatted_list2 = [x.lower() for x in non_news]
+                formatted_list2 = [x.replace('\n', '') for x in formatted_list2]
                 if len(read_data["entities"]["user_mentions"]) is not 0:
                     for mentioned_user in read_data["entities"]["user_mentions"]:
-                        if (mentioned_user["screen_name"]).lower() not in formatted_list and mentioned_user["screen_name"] not in Found_Users:
+                        if (mentioned_user["screen_name"]).lower() not in formatted_list1 and (mentioned_user["screen_name"]).lower() not in formatted_list2 and mentioned_user["screen_name"] not in Found_Users:
                             string = mentioned_user["screen_name"] + '\n'
                             #print(mentioned_user)
                             #tf.write(json.dumps(api.get_user(mentioned_user["id"])))
@@ -73,7 +79,7 @@ class TwitterListener(StreamListener):
                             #tf.write('\n')
                             Found_Users.add(mentioned_user["screen_name"])
                 if 'retweeted_status' in read_data:
-                    if (read_data["retweeted_status"]["user"]["screen_name"]).lower() not in formatted_list and read_data["retweeted_status"]["user"]["screen_name"] not in Found_Users:
+                    if (read_data["retweeted_status"]["user"]["screen_name"]).lower() not in formatted_list1 and (read_data["retweeted_status"]["user"]["screen_name"]).lower() not in formatted_list2 and read_data["retweeted_status"]["user"]["screen_name"] not in Found_Users:
                         string = read_data["retweeted_status"]["user"]["screen_name"] + '\n'
                         #print(read_data["retweeted_status"]["user"])
                         #tf.write(json.dumps(read_data["retweeted_status"]["user"]))

@@ -16,38 +16,14 @@ from nltk.classify import ClassifierI
 from random import shuffle
 
 def compare_time(user):
-<<<<<<< HEAD
-    UTC = tweepy.API.user_timeline((user._json)['screen_name'], count=1)[0]['created_at']
-    print(UTC)
-    UTC = UTC[:19] + UTC[25:]
-    print(UTC)
-    created = time.strptime(UTC, '%a %b %d %H:%M:%S %Y')
-    now = datetime.datetime.now()[:20]
-    now = time.strptime(datetime.datetime.now(), '%Y-%m-%d %H:%M:%S')
-    created = time.mktime(created)
-    now = time.mktime(now)
-    return int(now-created)/3600 % 24
-    
-=======
-    # UTC = (((api.user_timeline((user._json)['screen_name'], count=1))[0])._json)['created_at']
-    # UTC = UTC[:19] + UTC[25:]
-    # created = time.strptime(UTC, '%a %b %d %H:%M:%S %Y')
-    # current = (str(datetime.datetime.now()))[:19]
-    # current = time.strptime(current, '%Y-%m-%d %H:%M:%S')
-    # created = time.mktime(created)
-    # current = time.mktime(current)
-    # print("CURRENT TIME: %s", current)
-    # print("CREATED TIME: %s", created)
-    # rv = (int(current-created) / 3600) % 24
-    # print(rv)
-    # return rv
     tweet_time = parsedate_to_datetime((((api.user_timeline((user._json)['screen_name'], count=1))[0])._json)['created_at'])
     current_time = datetime.datetime.now()
-    difference = (current_time - tweet_time) / timedelta(hours=1)
+    difference = (current_time - tweet_time)
+    difference = difference.total_seconds()
+    difference = difference/3600
     return difference
 
 # # # # THIS HELPS DETERMINE A NEWS ACCOUNT # # # #
->>>>>>> b4b6bc1b0e41f0efe6af092f215f09a7f4f22016
 def filter(user):
     if(user._json)['protected'] is False:
         if((user._json)['followers_count'] > 700) and ((user._json)['verified'] is True):
@@ -113,18 +89,22 @@ test_dict = dict()
 # # # # KNOWN NEWS ACCOUNTS # # # #
 for news_user in fileinput.input('NewsList.txt'):
     try:
+        user_error = news_user
         news_user = api.get_user(news_user)
         labeled_users[news_user] = 'news'
     except tweepy.error.TweepError as e:
-        print(e)
+        print(e, end='')
+        print(user_error)
 
 # # # # KNOWN NON NEWS ACCOUNTS # # # #
 for non_news_user in fileinput.input('non_news_users.txt'):
     try:
+        user_error = non_news_user
         non_news_user = api.get_user(non_news_user)
         labeled_users[non_news_user] = 'non'
     except tweepy.error.TweepError as e:
-        print(e)
+        print(e, end='')
+        print(user_error)
 
 # # # # FINDING MOST COMMON WORDS # # # #
 all_words = []
@@ -148,20 +128,20 @@ for user_object, category in labeled_users.items():
         featuresets.append((find_features(bio), category))
 
 shuffle(featuresets)
-training_set = featuresets
-#testing_set = featuresets[628:]
+training_set = featuresets[:1275]
+testing_set = featuresets[1275:]
 
 # # # # DIFFERENT CLASSIFIERS THAT WILL BE USED FOR VOTING SYSTEM # # # #
 classifier = nltk.NaiveBayesClassifier.train(training_set)
-# print('Original classifier accuracy:', (nltk.classify.accuracy(classifier, testing_set))*100)
+print('Original classifier accuracy:', (nltk.classify.accuracy(classifier, testing_set))*100)
 
 BernoulliNB_classifier = SklearnClassifier(BernoulliNB())
 BernoulliNB_classifier.train(training_set)
-# print('Bernoulli classifier accuracy:', (nltk.classify.accuracy(BernoulliNB_classifier, testing_set))*100)
+print('Bernoulli classifier accuracy:', (nltk.classify.accuracy(BernoulliNB_classifier, testing_set))*100)
 
 LinearSVC_classifier = SklearnClassifier(LinearSVC())
 LinearSVC_classifier.train(training_set)
-# print('Linear SVC classifier accuracy:', (nltk.classify.accuracy(LinearSVC_classifier, testing_set))*100)
+print('Linear SVC classifier accuracy:', (nltk.classify.accuracy(LinearSVC_classifier, testing_set))*100)
 
 # MNB_classifier = SklearnClassifier(MultinomialNB())
 # MNB_classifier.train(training_set)
@@ -188,9 +168,10 @@ LinearSVC_classifier.train(training_set)
 # print('NuSVC classifier accuracy:', (nltk.classify.accuracy(NuSVC_classifier, testing_set))*100)
 
 voted_classifier = VoteClassifier(classifier, BernoulliNB_classifier, LinearSVC_classifier)
-# print('Voted classifier accuracy:', (nltk.classify.accuracy(voted_classifier, testing_set))*100)
+print('Voted classifier accuracy:', (nltk.classify.accuracy(voted_classifier, testing_set))*100)
 
 # # # # FOUND ACCOUNTS WITH STREAMING API # # # #
+'''
 for found_user in fileinput.input('Users_Found_by_API.txt'):
     try:
         found_user = api.get_user(found_user)
@@ -209,3 +190,4 @@ for found_user in fileinput.input('Users_Found_by_API.txt'):
             print(voted_classifier.confidence(feats))
     except tweepy.error.TweepError as e:
         print(e)
+'''
