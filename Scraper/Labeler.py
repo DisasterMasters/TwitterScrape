@@ -15,8 +15,8 @@ from statistics import mode
 from nltk.classify import ClassifierI
 from random import shuffle
 
-def compare_time(user):
-    tweet_time = parsedate_to_datetime((((api.user_timeline((user._json)['screen_name'], count=1))[0])._json)['created_at'])
+def compare_time(user, num_tweets):
+    tweet_time = parsedate_to_datetime((((api.user_timeline((user._json)['screen_name'], count=num_tweets))[num_tweets-1])._json)['created_at'])
     current_time = datetime.datetime.now()
     difference = (current_time - tweet_time)
     difference = difference.total_seconds()
@@ -28,10 +28,14 @@ def filter(user):
     if(user._json)['protected'] is False:
         if((user._json)['followers_count'] > 700) and ((user._json)['verified'] is True):
             if(user._json)['url'] is not None:
-                    if compare_time(user) <= 6:
                         return True
     return False
 
+def tweet_frequency(user, num_tweets):
+    oldest_tweet = compare_time(user, num_tweets)
+    oldest_tweet = oldest_tweet/24
+    freq = num_tweets/oldest_tweet #should be tweets/day
+    return freq
 # # # # THIS CLASS IS USED TO DETERMINE CONFIDENCE AND INCREASE CLASSIFICATION RELIABILITY # # # #
 class VoteClassifier(ClassifierI):
     def __init__(self, *classifiers):

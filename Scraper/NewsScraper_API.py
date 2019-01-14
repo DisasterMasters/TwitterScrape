@@ -4,6 +4,9 @@ from tweepy import Stream
 import fileinput
 import json
 from time import time
+import time
+import tweepy
+import math
 
 import twitter_creds
 
@@ -14,7 +17,7 @@ Found_Users = set()
 for newshandle in fileinput.input('NewsList.txt'):
     NewsList.add(newshandle)
 
-for handle in fileinput.input('none_news_users.txt'):
+for handle in fileinput.input('non_news_users.txt'):
     non_news.add(handle)
 
 # # # # TWITTER AUTHENTICATOR # # # #
@@ -65,11 +68,16 @@ class TwitterListener(StreamListener):
                 read_data = json.loads(data)
                 formatted_list1 = [x.lower() for x in NewsList]
                 formatted_list1 = [x.replace('\n', '') for x in formatted_list1]
+                print("formatted_list1 ", formatted_list1)
                 formatted_list2 = [x.lower() for x in non_news]
                 formatted_list2 = [x.replace('\n', '') for x in formatted_list2]
+                print("formatted_list2 ", formatted_list2)
+                formatted_list = formatted_list1 | formatted_list2
+                print("formatted_list ", formatted_list)
                 if len(read_data["entities"]["user_mentions"]) is not 0:
                     for mentioned_user in read_data["entities"]["user_mentions"]:
-                        if (mentioned_user["screen_name"]).lower() not in formatted_list1 and (mentioned_user["screen_name"]).lower() not in formatted_list2 and mentioned_user["screen_name"] not in Found_Users:
+                        #if (mentioned_user["screen_name"]).lower() not in formatted_list1 and (mentioned_user["screen_name"]).lower() not in formatted_list2 and mentioned_user["screen_name"] not in Found_Users:
+                        if (mentioned_user["screen_name"]).lower() not in formatted_list and mentioned_user["screen_name"] not in Found_Users:
                             string = mentioned_user["screen_name"] + '\n'
                             #print(mentioned_user)
                             #tf.write(json.dumps(api.get_user(mentioned_user["id"])))
@@ -79,7 +87,7 @@ class TwitterListener(StreamListener):
                             #tf.write('\n')
                             Found_Users.add(mentioned_user["screen_name"])
                 if 'retweeted_status' in read_data:
-                    if (read_data["retweeted_status"]["user"]["screen_name"]).lower() not in formatted_list1 and (read_data["retweeted_status"]["user"]["screen_name"]).lower() not in formatted_list2 and read_data["retweeted_status"]["user"]["screen_name"] not in Found_Users:
+                    if (read_data["retweeted_status"]["user"]["screen_name"]).lower() not in formatted_list and read_data["retweeted_status"]["user"]["screen_name"] not in Found_Users:
                         string = read_data["retweeted_status"]["user"]["screen_name"] + '\n'
                         #print(read_data["retweeted_status"]["user"])
                         #tf.write(json.dumps(read_data["retweeted_status"]["user"]))
@@ -93,7 +101,7 @@ class TwitterListener(StreamListener):
             print("Error on_data %s" % str(e))
         return True
 
-    def on_error(self, status):
+    def on_error(self, status_code):
         '''
         *******************************************************************
         From Twitter Streaming API Documentation
@@ -134,10 +142,10 @@ if __name__ == '__main__':
     twitter_streamer = TwitterStreamer()
 
     try:
-        start = time()
+        start = time.time()
         twitter_streamer.stream_tweets(fetched_tweets_filename, keyword_list)
     except KeyboardInterrupt:
-        stop = time()
+        stop = time.time()
         elapsed = stop - start
         elapsed = int(elapsed)
         print('\n')
