@@ -14,10 +14,10 @@ NewsList = set()
 non_news = set()
 Found_Users = set()
 
-for newshandle in fileinput.input('NewsList.txt'):
+for newshandle in fileinput.input('Scraper/NewsList.txt'):
     NewsList.add(newshandle)
 
-for handle in fileinput.input('non_news_users.txt'):
+for handle in fileinput.input('Scraper/non_news_users.txt'):
     non_news.add(handle)
 
 # # # # TWITTER AUTHENTICATOR # # # #
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     global count
     count = 0
     keyword_list = []
-    for keyword in fileinput.input('keyword_list.txt'):
+    for keyword in fileinput.input('Scraper/keyword_list.txt'):
         keyword_list.append(keyword)
     fetched_tweets_filename = "Users_Found_by_API.txt"
 
