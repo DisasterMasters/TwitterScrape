@@ -1,9 +1,12 @@
+import math
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
 from tweepy import Stream
 import fileinput
 import json
 from time import time
+from time import strftime
+from time import sleep
 
 import twitter_creds
 
@@ -14,8 +17,20 @@ Found_Users = set()
 for newshandle in fileinput.input('NewsList.txt'):
     NewsList.add(newshandle)
 
-for handle in fileinput.input('none_news_users.txt'):
+for handle in fileinput.input('non_news_users.txt'):
     non_news.add(handle)
+
+formatted_list1 = []
+formatted_list2 = []
+
+for x in NewsList:
+    x = x.lower()
+    x = x.replace('\n', '')
+    formatted_list1.append(x)
+for x in non_news:
+    x = x.lower()
+    x = x.replace('\n', '')
+    formatted_list2.append(x)
 
 # # # # TWITTER AUTHENTICATOR # # # #
 class TwitterAuthenticator():
@@ -63,13 +78,10 @@ class TwitterListener(StreamListener):
             with open(self.fetched_tweets_filename, 'a') as tf:
                 #now find out if tweets are news related
                 read_data = json.loads(data)
-                formatted_list1 = [x.lower() for x in NewsList]
-                formatted_list1 = [x.replace('\n', '') for x in formatted_list1]
-                formatted_list2 = [x.lower() for x in non_news]
-                formatted_list2 = [x.replace('\n', '') for x in formatted_list2]
                 if len(read_data["entities"]["user_mentions"]) is not 0:
                     for mentioned_user in read_data["entities"]["user_mentions"]:
-                        if (mentioned_user["screen_name"]).lower() not in formatted_list1 and (mentioned_user["screen_name"]).lower() not in formatted_list2 and mentioned_user["screen_name"] not in Found_Users:
+                        name = (mentioned_user["screen_name"]).lower()
+                        if name not in formatted_list1 and name not in formatted_list2 and mentioned_user["screen_name"] not in Found_Users:
                             string = mentioned_user["screen_name"] + '\n'
                             #print(mentioned_user)
                             #tf.write(json.dumps(api.get_user(mentioned_user["id"])))
@@ -79,7 +91,8 @@ class TwitterListener(StreamListener):
                             #tf.write('\n')
                             Found_Users.add(mentioned_user["screen_name"])
                 if 'retweeted_status' in read_data:
-                    if (read_data["retweeted_status"]["user"]["screen_name"]).lower() not in formatted_list1 and (read_data["retweeted_status"]["user"]["screen_name"]).lower() not in formatted_list2 and read_data["retweeted_status"]["user"]["screen_name"] not in Found_Users:
+                    name2 = (read_data["retweeted_status"]["user"]["screen_name"]).lower()
+                    if name2 not in formatted_list1 and name2 not in formatted_list2 and read_data["retweeted_status"]["user"]["screen_name"] not in Found_Users:
                         string = read_data["retweeted_status"]["user"]["screen_name"] + '\n'
                         #print(read_data["retweeted_status"]["user"])
                         #tf.write(json.dumps(read_data["retweeted_status"]["user"]))
@@ -93,7 +106,7 @@ class TwitterListener(StreamListener):
             print("Error on_data %s" % str(e))
         return True
 
-    def on_error(self, status):
+    def on_error(self, status_code):
         '''
         *******************************************************************
         From Twitter Streaming API Documentation
@@ -109,15 +122,15 @@ class TwitterListener(StreamListener):
         print('Error:', str(status_code))
         if status_code == 420:
             sleepy = 60 * math.pow(2, self.siesta)
-            print(time.strftime("%Y%m%d_%H%M%S"))
+            print(strftime("%Y %m %d_%H:%M:%S"))
             print("A reconnection attempt will occur in " + str(sleepy / 60) + " minutes.")
-            time.sleep(sleepy)
+            sleep(sleepy)
             self.siesta += 1
         else:
             sleepy = 5 * math.pow(2, self.nightnight)
-            print(time.strftime("%Y%m%d_%H%M%S"))
+            print(strftime("%Y %m %d_%H:%M:%S"))
             print("A reconnection attempt will occur in " + str(sleepy) + " seconds.")
-            time.sleep(sleepy)
+            sleep(sleepy)
             self.nightnight += 1
         return True
 
@@ -128,6 +141,7 @@ if __name__ == '__main__':
     count = 0
     keyword_list = []
     for keyword in fileinput.input('keyword_list.txt'):
+        keyword = keyword.replace('\n', '')
         keyword_list.append(keyword)
     fetched_tweets_filename = "Users_Found_by_API.txt"
 

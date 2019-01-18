@@ -305,3 +305,5 @@ NYTScience
 TheSun
 DailyMirror
 SkyNews
+euronews
+ScotNational

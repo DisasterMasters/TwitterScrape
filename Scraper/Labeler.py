@@ -14,10 +14,12 @@ from sklearn.svm import LinearSVC, NuSVC
 from statistics import mode
 from nltk.classify import ClassifierI
 from random import shuffle
+from googletrans import Translator
+from nltk.tokenize import TweetTokenizer
 
 def compare_time(user):
     tweet_time = parsedate_to_datetime((((api.user_timeline((user._json)['screen_name'], count=1))[0])._json)['created_at'])
-    current_time = datetime.datetime.now()
+    current_time = datetime.datetime.now(datetime.timezone.utc)
     difference = (current_time - tweet_time)
     difference = difference.total_seconds()
     difference = difference/3600
@@ -59,7 +61,6 @@ auth.set_access_token(twitter_creds.ACCESS_TOKEN, twitter_creds.ACCESS_TOKEN_SEC
 api = tweepy.API(auth, wait_on_rate_limit=True)
 
 # # # # THIS SAVES A USER SO IT DOESN"T HAVE TO BE FOUND WITH TWEEPY AGAIN # # # #
-# Maybe we shouldn't use this
 def save_object(obj, filename):
     with open(filename, 'wb') as output:  # Overwrites any existing file.
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
@@ -84,7 +85,7 @@ def find_features(words_to_check):
 
 
 labeled_users = dict()
-test_dict = dict()
+#test_dict = dict()
 
 # # # # KNOWN NEWS ACCOUNTS # # # #
 for news_user in fileinput.input('NewsList.txt'):
@@ -108,11 +109,12 @@ for non_news_user in fileinput.input('non_news_users.txt'):
 
 # # # # FINDING MOST COMMON WORDS # # # #
 all_words = []
+tknzr = TweetTokenizer()
 for user_object in labeled_users.keys():
     bio = (user_object._json)['description']
     if (bio is not None) or (len(bio) is not 0):
         #print(bio, '\n')
-        bio = nltk.word_tokenize(bio)
+        bio = tknzr.tokenize(bio)
         for word in bio:
             word = word.lower()
             all_words.append(word)
@@ -124,24 +126,24 @@ featuresets = []
 for user_object, category in labeled_users.items():
     bio = (user_object._json)['description']
     if (bio is not None) or (len(bio) is not 0):
-        bio = nltk.word_tokenize(bio)
+        bio = tknzr.tokenize(bio)
         featuresets.append((find_features(bio), category))
 
 shuffle(featuresets)
-training_set = featuresets[:1275]
-testing_set = featuresets[1275:]
+training_set = featuresets
+#testing_set = featuresets[1275:]
 
 # # # # DIFFERENT CLASSIFIERS THAT WILL BE USED FOR VOTING SYSTEM # # # #
 classifier = nltk.NaiveBayesClassifier.train(training_set)
-print('Original classifier accuracy:', (nltk.classify.accuracy(classifier, testing_set))*100)
+#print('Original classifier accuracy:', (nltk.classify.accuracy(classifier, testing_set))*100)
 
 BernoulliNB_classifier = SklearnClassifier(BernoulliNB())
 BernoulliNB_classifier.train(training_set)
-print('Bernoulli classifier accuracy:', (nltk.classify.accuracy(BernoulliNB_classifier, testing_set))*100)
+#print('Bernoulli classifier accuracy:', (nltk.classify.accuracy(BernoulliNB_classifier, testing_set))*100)
 
 LinearSVC_classifier = SklearnClassifier(LinearSVC())
 LinearSVC_classifier.train(training_set)
-print('Linear SVC classifier accuracy:', (nltk.classify.accuracy(LinearSVC_classifier, testing_set))*100)
+#print('Linear SVC classifier accuracy:', (nltk.classify.accuracy(LinearSVC_classifier, testing_set))*100)
 
 # MNB_classifier = SklearnClassifier(MultinomialNB())
 # MNB_classifier.train(training_set)
@@ -168,26 +170,46 @@ print('Linear SVC classifier accuracy:', (nltk.classify.accuracy(LinearSVC_class
 # print('NuSVC classifier accuracy:', (nltk.classify.accuracy(NuSVC_classifier, testing_set))*100)
 
 voted_classifier = VoteClassifier(classifier, BernoulliNB_classifier, LinearSVC_classifier)
-print('Voted classifier accuracy:', (nltk.classify.accuracy(voted_classifier, testing_set))*100)
+#print('Voted classifier accuracy:', (nltk.classify.accuracy(voted_classifier, testing_set))*100)
 
 # # # # FOUND ACCOUNTS WITH STREAMING API # # # #
-'''
+try:
+    translator = Translator()
+except Exception as e:
+    print(e)
+f = open('Labeled_Users_from_API.txt', 'w')
 for found_user in fileinput.input('Users_Found_by_API.txt'):
     try:
         found_user = api.get_user(found_user)
         bio = (found_user._json)['description']
         if (bio is not None) or (len(bio) is not 0):
+            try:
+                if (translator.detect(bio)).lang == 'en':
+                    pass
+                else:
+                    bio = (translator.translate(bio, dest='en')).text
+            except:
+                print("Couldn't translate")
             if filter(found_user) is False:
-                print((found_user._json)['screen_name'] + ' |', end=' ')
-                print(bio + ' |', end=' ')
-                print('non 1.0')
+                #print((found_user._json)['screen_name'] + ' |', end=' ')
+                f.write((found_user._json)['screen_name'] + ' | ')
+                #print(bio + ' |', end=' ')
+                f.write(bio + ' |')
+                #print('non 1.0')
+                f.write('non 1.0')
+                f.write('\n')
                 continue
-            print((found_user._json)['screen_name'] + ' |', end=' ')
-            print(bio + ' |', end=' ')
-            bio = nltk.word_tokenize(bio)
+            #print((found_user._json)['screen_name'] + ' |', end=' ')
+            f.write((found_user._json)['screen_name'] + ' | ')
+            #print(bio + ' |', end=' ')
+            f.write(bio + ' |')
+            bio = tknzr.tokenize(bio)
             feats = find_features(bio)
-            print(voted_classifier.classify(feats), end=' ')
-            print(voted_classifier.confidence(feats))
+            #print(voted_classifier.classify(feats), end=' ')
+            f.write(voted_classifier.classify(feats))
+            f.write('\n')
+            #print(voted_classifier.confidence(feats))
+            f.write(str(voted_classifier.confidence(feats)))
+            f.write('\n')
     except tweepy.error.TweepError as e:
         print(e)
-'''
