@@ -14,7 +14,7 @@ NewsList = set()
 non_news = set()
 Found_Users = set()
 
-for newshandle in fileinput.input('NewsList.txt'):
+for newshandle in fileinput.input('Scraper/NewsList.txt'):
     NewsList.add(newshandle)
 
 for handle in fileinput.input('non_news_users.txt'):
@@ -148,10 +148,10 @@ if __name__ == '__main__':
     twitter_streamer = TwitterStreamer()
 
     try:
-        start = time()
+        start = time.time()
         twitter_streamer.stream_tweets(fetched_tweets_filename, keyword_list)
     except KeyboardInterrupt:
-        stop = time()
+        stop = time.time()
         elapsed = stop - start
         elapsed = int(elapsed)
         print('\n')

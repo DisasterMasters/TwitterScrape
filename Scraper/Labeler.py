@@ -30,10 +30,14 @@ def filter(user):
     if(user._json)['protected'] is False:
         if((user._json)['followers_count'] > 700) and ((user._json)['verified'] is True):
             if(user._json)['url'] is not None:
-                    if compare_time(user) <= 6:
                         return True
     return False
 
+def tweet_frequency(user, num_tweets):
+    oldest_tweet = compare_time(user, num_tweets)
+    oldest_tweet = oldest_tweet/24
+    freq = num_tweets/oldest_tweet #should be tweets/day
+    return freq
 # # # # THIS CLASS IS USED TO DETERMINE CONFIDENCE AND INCREASE CLASSIFICATION RELIABILITY # # # #
 class VoteClassifier(ClassifierI):
     def __init__(self, *classifiers):

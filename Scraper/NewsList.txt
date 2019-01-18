@@ -37,7 +37,6 @@ cracked
 slate
 bbcclick
 fastcompany
-reuters
 incmagazine
 BBCNews
 abpnewstv
@@ -307,3 +306,17 @@ DailyMirror
 SkyNews
 euronews
 ScotNational
+bpolitics
+ReutersPolitics
+NBCPolitics
+cspan
+DeptofDefense
+UN
+StateDept
+MeetThePress
+ABCPolitics
+AP_Politics
+PolitiFact
+ForeignAffairs
+ForeignPolicy
+techreview
