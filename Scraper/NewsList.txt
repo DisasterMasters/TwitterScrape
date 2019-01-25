@@ -320,3 +320,5 @@ PolitiFact
 ForeignAffairs
 ForeignPolicy
 techreview
+WhispersNewsLTD
+guardian
