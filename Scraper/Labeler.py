@@ -16,6 +16,10 @@ from nltk.classify import ClassifierI
 from random import shuffle
 from googletrans import Translator
 from nltk.tokenize import TweetTokenizer
+import os
+from tqdm import tqdm
+
+dirname = os.path.dirname(os.path.abspath(__file__))
 
 def compare_time(user):
     tweet_time = parsedate_to_datetime((((api.user_timeline((user._json)['screen_name'], count=1))[0])._json)['created_at'])
@@ -38,6 +42,7 @@ def tweet_frequency(user, num_tweets):
     oldest_tweet = oldest_tweet/24
     freq = num_tweets/oldest_tweet #should be tweets/day
     return freq
+
 # # # # THIS CLASS IS USED TO DETERMINE CONFIDENCE AND INCREASE CLASSIFICATION RELIABILITY # # # #
 class VoteClassifier(ClassifierI):
     def __init__(self, *classifiers):
@@ -67,16 +72,16 @@ api = tweepy.API(auth, wait_on_rate_limit=True)
 # # # # THIS SAVES A USER SO IT DOESN"T HAVE TO BE FOUND WITH TWEEPY AGAIN # # # #
 def save_object(obj, filename):
     with open(filename, 'wb') as output:  # Overwrites any existing file.
-        pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
+        pickle.dump(obj, output)
 
-def recover_object(obj, filename):
-    with open(filename, 'rb') as input:
-        try:
-            rv = pickle.load(obj, input, pickle.HIGHEST_PROTOCOL)
-        except:
-            rv = None
-        finally:
-            return rv
+def recover_object(filename):
+    try:
+        with open(filename, 'rb') as input:
+            rv = pickle.load(input)
+    except FileNotFoundError as e:
+        #print(e)
+        rv = None
+    return rv
 # # # #
 
 # # # # THIS MAKES A FEATURE SET # # # #
@@ -92,21 +97,37 @@ labeled_users = dict()
 #test_dict = dict()
 
 # # # # KNOWN NEWS ACCOUNTS # # # #
-for news_user in fileinput.input('NewsList.txt'):
+print("GATHERING NEWS ACCOUNTS\n")
+for news_user in tqdm(fileinput.input('NewsList.txt')):
+    news_user = news_user.lower()
+    news_user = news_user.replace('\n', '')
     try:
         user_error = news_user
-        news_user = api.get_user(news_user)
-        labeled_users[news_user] = 'news'
+        obj = recover_object(dirname + '/SAVED_USER_OBJECTS/' + news_user + '.pickle')
+        if obj is None:
+            news_user = api.get_user(news_user)
+            save_object(news_user, dirname + '/SAVED_USER_OBJECTS/' + (news_user._json)['screen_name'] + '.pickle')
+            labeled_users[news_user] = 'news'
+        else:
+            labeled_users[obj] = 'news'
     except tweepy.error.TweepError as e:
         print(e, end='')
         print(user_error)
 
 # # # # KNOWN NON NEWS ACCOUNTS # # # #
-for non_news_user in fileinput.input('non_news_users.txt'):
+print("GATHERING IRRELEVANT ACCOUNTS\n")
+for non_news_user in tqdm(fileinput.input('non_news_users.txt')):
+    non_news_user = non_news_user.lower()
+    non_news_user = non_news_user.replace('\n', '')
     try:
         user_error = non_news_user
-        non_news_user = api.get_user(non_news_user)
-        labeled_users[non_news_user] = 'non'
+        obj = recover_object(dirname + '/SAVED_USER_OBJECTS/' + non_news_user + '.pickle')
+        if obj is None:
+            non_news_user = api.get_user(non_news_user)
+            save_object(non_news_user, dirname + '/SAVED_USER_OBJECTS/' + (non_news_user._json)['screen_name'] + '.pickle')
+            labeled_users[non_news_user] = 'non'
+        else:
+            labeled_users[obj] = 'non'
     except tweepy.error.TweepError as e:
         print(e, end='')
         print(user_error)
@@ -114,7 +135,8 @@ for non_news_user in fileinput.input('non_news_users.txt'):
 # # # # FINDING MOST COMMON WORDS # # # #
 all_words = []
 tknzr = TweetTokenizer()
-for user_object in labeled_users.keys():
+print("MAKING FREQUENCY DISTRIBUTION FROM USERS BIOS\n")
+for user_object in tqdm(labeled_users.keys()):
     bio = (user_object._json)['description']
     if (bio is not None) or (len(bio) is not 0):
         #print(bio, '\n')
@@ -127,7 +149,8 @@ all_words = nltk.FreqDist(all_words)
 # # # # MAKING A FEATURE SET FOR EACH BIO BASED ON MOST COMMON WORDS # # # #
 top_words = [w for w in all_words.most_common(100)]
 featuresets = []
-for user_object, category in labeled_users.items():
+print("MAKING FEATURE SETS\n")
+for user_object, category in tqdm(labeled_users.items()):
     bio = (user_object._json)['description']
     if (bio is not None) or (len(bio) is not 0):
         bio = tknzr.tokenize(bio)
@@ -182,9 +205,18 @@ try:
 except Exception as e:
     print(e)
 f = open('Labeled_Users_from_API.txt', 'w')
-for found_user in fileinput.input('Users_Found_by_API.txt'):
+print("LABELING USERS FROM STREAMING API\n")
+for found_user in tqdm(fileinput.input('Users_Found_by_API.txt')):
+    found_user = found_user.lower()
+    found_user = found_user.replace('\n', '')
     try:
-        found_user = api.get_user(found_user)
+        user_error = found_user
+        obj = recover_object(dirname + '/SAVED_USER_OBJECTS/' + found_user + '.pickle')
+        if obj is None:
+            found_user = api.get_user(found_user)
+            save_object(found_user, dirname + '/SAVED_USER_OBJECTS/' + (found_user._json)['screen_name'] + '.pickle')
+        else:
+            found_user = obj
         bio = (found_user._json)['description']
         if (bio is not None) or (len(bio) is not 0):
             try:
@@ -193,12 +225,12 @@ for found_user in fileinput.input('Users_Found_by_API.txt'):
                 else:
                     bio = (translator.translate(bio, dest='en')).text
             except:
-                print("Couldn't translate")
+                pass
             if filter(found_user) is False:
                 #print((found_user._json)['screen_name'] + ' |', end=' ')
                 f.write((found_user._json)['screen_name'] + ' | ')
                 #print(bio + ' |', end=' ')
-                f.write(bio + ' |')
+                f.write(bio + ' | ')
                 #print('non 1.0')
                 f.write('non 1.0')
                 f.write('\n')
@@ -206,7 +238,7 @@ for found_user in fileinput.input('Users_Found_by_API.txt'):
             #print((found_user._json)['screen_name'] + ' |', end=' ')
             f.write((found_user._json)['screen_name'] + ' | ')
             #print(bio + ' |', end=' ')
-            f.write(bio + ' |')
+            f.write(bio + ' | ')
             bio = tknzr.tokenize(bio)
             feats = find_features(bio)
             #print(voted_classifier.classify(feats), end=' ')
@@ -216,4 +248,5 @@ for found_user in fileinput.input('Users_Found_by_API.txt'):
             f.write(str(voted_classifier.confidence(feats)))
             f.write('\n')
     except tweepy.error.TweepError as e:
-        print(e)
+        print(e, end=' ')
+        print(user_error)

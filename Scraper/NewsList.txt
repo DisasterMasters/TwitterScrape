@@ -54,7 +54,6 @@ usatoday
 mtv
 freakonomics
 boingboing
-billboarddotcom
 empiremagazine
 todayshow
 good
@@ -92,7 +91,6 @@ washingtonpost
 tpmmedia
 msnbc
 wnycradiolab
-cnnlive
 davos
 planetmoney
 cnetnews
@@ -163,7 +161,6 @@ crankywxguy
 weatherdak
 DRmetwatch
 wxdam
-GBlack_22
 WxComm
 HRRRison
 islivingston

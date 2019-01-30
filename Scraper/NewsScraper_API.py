@@ -14,7 +14,7 @@ NewsList = set()
 non_news = set()
 Found_Users = set()
 
-for newshandle in fileinput.input('Scraper/NewsList.txt'):
+for newshandle in fileinput.input('NewsList.txt'):
     NewsList.add(newshandle)
 
 for handle in fileinput.input('non_news_users.txt'):
