@@ -82,8 +82,4 @@ for i in range(len(lines)):
     
     f.write("\n")
     f.close()
-    
-    print("Total ", lines[i], " nonprofit twitter accounts found: ", len(links), "\n")
-
-print(len(links_by_state), " U.S. nonprofits found on twitter\n")
 
