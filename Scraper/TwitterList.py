@@ -8,8 +8,8 @@ auth.set_access_token(twitter_creds.ACCESS_TOKEN, twitter_creds.ACCESS_TOKEN_SEC
 api = tweepy.API(auth, wait_on_rate_limit=True)
 
 # modified snippet from https://gist.github.com/macloo/5c69cdf5294fa97eb41d6ad950233cee
-slug = 'governors'
-owner = 'cspan'
+slug = 'ambassadors'
+owner = 'Twiplomacy'
 # slug and owner is in the url of the list
 
 members = []
@@ -23,3 +23,11 @@ for user in members:
     f.write(user.screen_name + '\n')
 
 f.close()
+
+#UK national journalists: https://twitter.com/journalismnews/lists/uk-national-journalists/members?lang=en&lang=en
+
+#Tech journalists and bloggers: https://twitter.com/Scobleizer/lists/tech-journalists/members
+
+#Foreign ministers and ministries: https://twitter.com/Twiplomacy/lists/foreign-affairs/members?lang=en
+
+#Ambassadors: https://twitter.com/Twiplomacy/lists/ambassadors/members?lang=en
