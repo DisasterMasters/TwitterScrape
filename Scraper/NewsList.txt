@@ -222,14 +222,7 @@ AlArabiya
 AJArabic
 CGTNOfficial
 SaudiNews50
-ndtv
 cnnarabic
-BBCNews
-TimesNow
-tvOneNews
-cnni
-abpnewstv
-NPR
 NoticiasRCN
 axios
 voxdotcom
@@ -284,7 +277,6 @@ CNNPolitics
 Suntimes
 NYDailyNews
 australian
-politico
 DenverChannel
 thetimes
 AJEnglish
@@ -319,3 +311,4 @@ ForeignPolicy
 techreview
 WhispersNewsLTD
 guardian
+Economia_3
