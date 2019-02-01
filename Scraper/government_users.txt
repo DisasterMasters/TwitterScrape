@@ -670,7 +670,6 @@ TheJusticeDept
 DeptofDefense
 USDA
 HHSGov
-realDonaldTrump
 mike_pence
 usedgov
 USDOL
@@ -719,7 +718,6 @@ SalamTammam
 IlvesToomas
 AnastasiadesCY
 Pontifex
-NicolasSarkozy
 PMOIndia
 VladaCG
 VladaRH
@@ -791,7 +789,6 @@ GH_PARK
 bluehousekorea
 PresidenciaRD
 dilmabr
-chavezcandanga
 myGovPortal
 KagutaMuseveni
 SleimanMichel
@@ -811,7 +808,6 @@ Presidencia_Ec
 DrBoniYAYI
 Hilaaleege
 PresidenciaPy
-hatoyamayukio
 forsaetisradun
 cbabdullahgul
 TonyAbbottMHR
@@ -855,9 +851,7 @@ MustafaAG
 niinisto
 PaulKagame
 TarjaHalonen
-QueenRania
 caymangovt
-RoyalFamily
 Statsmin_kontor
 DaniloMedina
 PresidenciaMX
@@ -886,12 +880,10 @@ erna_solberg
 NajibRazak
 stephenharperFR
 Rijksoverheid
-10DowningStreet
 sebastianpinera
 stephenharper
 eliodirupo
 EPN
-BarackObama
 GovMattBevin
 GovRonDeSantis
 GovernorCorbett
@@ -930,7 +922,6 @@ ScottWalker
 BillHaslam
 brianschweitzer
 HaleyBarbour
-JerryBrownGov
 DaveEHeineman
 GovAbbott
 MassGovernor
