@@ -1845,7 +1845,6 @@ annairrera
 Penenberg
 grossdm
 BotJunkie
-jamesrbuk
 Davidramli
 PointJules
 NatJLevy
@@ -1935,7 +1934,6 @@ MKBHD
 satariano
 EricFisherSBJ
 pcbritz
-_JackRiley
 muckrack
 ericafink
 sapna
@@ -2003,7 +2001,6 @@ stevep2007
 samsheffer
 katiedrumm
 ramonapringle
-kashhill
 agranoff
 spencersoper
 WBMason
@@ -2084,7 +2081,6 @@ Tom_Stears
 RogerWCheng
 wheresKR
 sal19
-ariannahuff
 samred
 sagoforth
 SteveCrowe
@@ -2106,7 +2102,6 @@ MurrayNewlands
 mikejsullivan
 mattmday
 _bmturner_
-joshtpm
 1heathermack
 stephcliff
 pdouglas
@@ -2155,7 +2150,6 @@ jucato
 cwarzel
 jme_c
 johakuhn
-AnnCurry
 verityburns
 sheeraf
 ChrisMatyszczyk
@@ -2255,7 +2249,6 @@ datavis
 stevesilberman
 EHolmes
 rh_brown
-ezraklein
 AndyBoxall
 Amirmizroch
 b_fung
@@ -2295,7 +2288,6 @@ BrettLoGiurato
 Bernstein
 nateog
 adrianweckler
-jackschofield
 BridgetCarey
 Drew_CM
 andrewlobo
@@ -2322,7 +2314,6 @@ jolingkent
 NathanMattise
 moorehn
 superscientific
-mattwarman
 lalpert1
 beijingscribe
 jaivijayan
@@ -2371,7 +2362,6 @@ garrywma
 murielvega
 JuliaAngwin
 benpopper
-NickKristof
 saschasegan
 nickhide
 jtwentyman
@@ -2416,7 +2406,6 @@ KatieBoehret
 palladinot
 JohnHendel
 kharijohnson
-kate_day
 yaelwrites
 paulohiga
 jyarow
@@ -2504,7 +2493,6 @@ stephanieoverby
 JessShambora
 bheater
 njgriffiths
-HowardKurtz
 NoahShachtman
 rafat
 stuwoo
@@ -2668,7 +2656,6 @@ rbrome
 way0utwest
 johnbattelle
 mattmcgee
-TonyRomm
 kh
 niclauren
 BurtHelm
@@ -2683,8 +2670,6 @@ listeningpost
 sascha_p
 nimishdubey
 nlw
-MattGarrahan
-brianstelter
 BradyDale
 TChed
 aSteveParker
@@ -2745,7 +2730,6 @@ SamPura
 BryFitz
 donald
 s_pritchard
-shanerichmond
 catone
 coopeydoop
 binarybits
@@ -2806,7 +2790,6 @@ sokane1
 Devindra
 isdixon
 mattlynley
-JoannaG
 joshgnosis
 liveside
 dsarno
@@ -2821,7 +2804,6 @@ ErrorJustin
 JackMarshall
 LorettaChao
 JackLoftus
-jenmartinez
 wunanhere
 dvellante
 taylorbuley
@@ -2833,7 +2815,6 @@ ldignan
 mgboz
 romaindillet
 hannahbouckley
-marcambinder
 chriswelch
 allpointsnorth
 tomwarren
@@ -2863,7 +2844,6 @@ ziadramley
 adra_la
 chendangak
 bhc3
-lucia_adams
 kytsune
 dmccabe
 alexismadrigal
@@ -2890,8 +2870,6 @@ sharonprofis
 MartinSFP
 benkuo
 ChronicleBenny
-jonfildes
-claudineb
 derekmross
 chafkin
 hamishmckenzie
@@ -2899,7 +2877,6 @@ mchan
 tomiogeron
 shansell
 nichcarlson
-BuzzFeedBen
 sbanjo
 mrdatahs
 corvida
@@ -2995,7 +2972,6 @@ jonrussell
 miketechshow
 tynanwrites
 NanSanFran
-charlesarthur
 juliandibbell
 mediatwit
 atul
@@ -3035,7 +3011,6 @@ EconoScribe
 sdadich
 page88
 a_greenberg
-davelee
 seamus
 willknight
 EricaOgg
@@ -3049,7 +3024,6 @@ segphault
 philiped
 cshipley
 kentnewsome
-dgelles
 adariostrange
 danackerman
 reckless
@@ -3104,7 +3078,6 @@ reybango
 nickbilton
 markoff
 kevin2kelly
-rhodri
 advodude
 LanceUlanoff
 wroush
@@ -3115,8 +3088,6 @@ howardowens
 robhof
 bmorrissey
 scottros
-ChrisNuttall
-ruskin147
 mmasnick
 caretpi
 natalimorris
@@ -3197,8 +3168,6 @@ henrytcasey
 joewilcox
 pkafka
 jemimakiss
-tim
-martinstabe
 RobertAndrews
 kevglobal
 centernetworks
