@@ -51,3 +51,5 @@ hwelectric
 CottonElectric
 BlueGrassEnergy
 CentralElectric
+SeattleSPU
+SEACityLight
