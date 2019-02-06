@@ -17,6 +17,9 @@ from random import shuffle
 from googletrans import Translator
 from nltk.tokenize import TweetTokenizer
 import os
+import pandas as pd
+from pd_doc2vec import doc2vec
+from ast import literal_eval
 from tqdm import tqdm
 
 dirname = os.path.dirname(os.path.abspath(__file__))
@@ -29,6 +32,7 @@ def compare_time(user):
     difference = difference/3600
     return difference
 
+
 # # # # THIS HELPS DETERMINE A NEWS ACCOUNT # # # #
 def filter(user):
     if(user._json)['protected'] is False:
@@ -37,11 +41,13 @@ def filter(user):
                         return True
     return False
 
+
 def tweet_frequency(user, num_tweets):
     oldest_tweet = compare_time(user, num_tweets)
     oldest_tweet = oldest_tweet/24
     freq = num_tweets/oldest_tweet #should be tweets/day
     return freq
+
 
 # # # # THIS CLASS IS USED TO DETERMINE CONFIDENCE AND INCREASE CLASSIFICATION RELIABILITY # # # #
 class VoteClassifier(ClassifierI):
@@ -63,6 +69,7 @@ class VoteClassifier(ClassifierI):
         choice_votes = votes.count(mode(votes))
         conf = choice_votes / len(votes)
         return conf
+
 
 # # # # TWITTER AUTHORIZATION # # # #
 auth = OAuthHandler(twitter_creds.CONSUMER_KEY, twitter_creds.CONSUMER_SECRET)
@@ -131,6 +138,150 @@ for non_news_user in tqdm(fileinput.input('non_news_users.txt')):
     except tweepy.error.TweepError as e:
         print(e, end='')
         print(user_error)
+
+def parseString(largeString):
+    largeString = str(largeString).split("_json=", 1)[-1]
+    # print(largeString)
+    largeString = largeString.split("}, id", 1)[-2]
+    largeString = largeString + "}"
+    python_dict = literal_eval(largeString)
+    return python_dict
+
+
+newsdata = []
+#news = pd.read_csv("NewsList.txt", sep=" ", header=None) #https://stackoverflow.com/questions/21546739/load-data-from-txt-with-pandas
+news = pd.read_csv("news.csv")
+# print(news['bio'])
+for index, row in tqdm(news.iterrows()):
+    current = {}
+    try:
+        # print(row['bio'], row['news'])
+        largeString = row['bio']
+        current["Source"] = row['news']
+        current["Description"] = parseString(largeString)["description"]
+        current["followers_count"] = parseString(largeString)["followers_count"]
+        current["friends_count"] = parseString(largeString)["friends_count"]
+        current["listed_count"] = parseString(largeString)["listed_count"]
+        current["favourites_count"] = parseString(largeString)["favourites_count"]
+        current["verified"] = parseString(largeString)["verified"]
+        current["statuses_count"] = parseString(largeString)["statuses_count"]
+        current["name"] = parseString(largeString)["name"]
+        current["url"] = parseString(largeString)["url"]
+        current["screen_name"] = parseString(largeString)["screen_name"]
+        #url
+    except:
+        pass
+    newsdata.append(current)
+
+df = pd.DataFrame(newsdata)
+# pulls data into the Pandas DataFrame
+
+print(df.head(3))
+print(df.columns.values)  # How many Columns we have in our dataframe
+print(df['Source'].value_counts())
+print(df.isna().sum())
+# Those dont have any usefull information, we can drop them!
+df = df.dropna()
+print(df.isna().sum())
+print(df.head(3))
+
+df = df.applymap(str)
+from sklearn.model_selection import train_test_split
+
+print(df.Source.value_counts())
+dow = {
+    0: "False",
+    1: "True"}
+
+df["verified"] = df['verified'].map(dow)
+df["verified"] = df['verified'].fillna(0)
+# print(df.isna().sum())
+# df = df.dropna()
+df = df.fillna(0)
+
+train, test = train_test_split(df, shuffle=True, test_size=0.25)
+
+print("Setting vairables")
+
+# We pass the class 3 fields:
+# 1. The DataFrame
+# 2. The X value, the Text (Pandas Series)
+# 3. The Y values, the labels that correspond to the text (Pandas Series)
+#                   It can be a list of the names of the columns or one as a string
+
+x = doc2vec(train, "Description", ["Source"])
+
+print("Scoring Model")
+
+# returns scores of each labels accuracy from the first column passed into
+# the Y or 3 arguments, in this example it was "main"
+# this uses sklearn.metrics.f1_score, you can pass in
+x.score(verbose=True)
+
+print("Predicting on text")
+
+# You can predict text as follows
+print(x.predict_text("I dislike old cabin cruisers."))
+
+print(x.predict_sims("We are the best news organization, covering global warming, fast coverage live streams"))
+
+tqdm.pandas()  # To do progress_apply, it is pandas .apply but with a progess bar
+
+# now lets add the label distances to each row so we can use randomforrest
+test["results"] = test["Description"].progress_apply(x.predict_sims)
+
+sims_dict = {'0': [], '1': []}
+
+for index, row in test.iterrows():
+    results_list = row["results"]
+
+    for i in [i[0] for i in results_list]:
+        sims_dict[i].append([rec for rec in results_list if rec[0] == i][0][1])
+
+# This will create a dataframe from the dict and then it will be concated to the original
+# This will add label distances
+sims_df = pd.DataFrame.from_dict(sims_dict)
+test = pd.concat([test, sims_df], axis=1)
+
+# now lets add the label distances to each row so we can use randomforrest
+train["results"] = train["Description"].progress_apply(x.predict_sims)
+
+sims_dict = {'0': [], '1': []}
+
+for index, row in train.iterrows():
+    results_list = row["results"]
+
+    for i in [i[0] for i in results_list]:
+        sims_dict[i].append([rec for rec in results_list if rec[0] == i][0][1])
+
+# This will create a dataframe from the dict and then it will be concated to the original
+# This will add label distances
+sims_df = pd.DataFrame.from_dict(sims_dict)
+train = pd.concat([train, sims_df], axis=1)
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+
+total = 0
+for i in range(10):
+    clf = RandomForestClassifier(n_estimators=100, max_depth=2, random_state=0)
+
+    x = train[["favourites_count", "followers_count", "friends_count", "listed_count", "statuses_count", "0", "1"]]
+    y = train[["Source"]]
+    test_x = test[["favourites_count", "followers_count", "friends_count", "listed_count", "statuses_count", "0", "1"]]
+    test_y = test[["Source"]]
+    x = x.applymap(float)
+    test_x = test_x.applymap(float)
+    y = y.applymap(float)
+    test_y = test_y.applymap(float)
+    x = x.fillna(0)
+    y = y.fillna(0)
+    test_y = test_y.fillna(0)
+    test_x = test_x.fillna(0)
+
+    clf.fit(x, y)
+    total = total + clf.score(test_x, test_y)
+print("Accuracy: ", total / 10)
 
 # # # # FINDING MOST COMMON WORDS # # # #
 all_words = []
