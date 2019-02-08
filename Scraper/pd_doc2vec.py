@@ -1,12 +1,11 @@
-#from TweetAnalysis/src
 import re
+from scipy import sparse
 import gensim
 from tqdm import tqdm
 from gensim.models.doc2vec import TaggedDocument
 from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-
 
 class doc2vec:
 
@@ -25,6 +24,7 @@ class doc2vec:
         self.dm = 0
         self.worker_count = 7
 
+
         labeled_sentences = []
         df_tags = []
 
@@ -35,7 +35,7 @@ class doc2vec:
         elif not isinstance(Y, list):
             raise TypeError
         self.df = df
-        #         print(self.df)
+#         print(self.df)
         self.x = X
         self.y = Y
         self.df_tags = df_tags
@@ -61,7 +61,7 @@ class doc2vec:
 
         df = self.df
         X = self.x
-        Y = self.y
+        Y =self.y
         self.verbose = verbose
         if 'basestring' not in globals():
             basestring = str
@@ -75,49 +75,47 @@ class doc2vec:
             df_tags = Y
         elif not isinstance(Y, list):
             raise TypeError
-
+       
         total_accuracy = 0
         total_label_accuracy = []
-        col = self.df_tags[0]
+        col =self.df_tags[0]
         for i in df[col].unique():
             total_label_accuracy.append(0)
+        iterations = 1
+        for i in (range(iterations)):
 
-        for i in (range(10):
+            train, test = train_test_split(self.df, shuffle=True, test_size=0.05)
 
-        #             if verbose:
-        #                 print("Scoring model " +str(i)+ " / 10")
+            for index, datapoint in train.iterrows():
+                tokenized_words = re.findall(self.w, datapoint[X].lower())
+                labeled_sentences.append(TaggedDocument(words=tokenized_words, tags=[datapoint[i] for i in df_tags]))
 
-        train, test = train_test_split(self.df, shuffle=True, test_size=0.05)
+            model = gensim.models.doc2vec.Doc2Vec(vector_size=self.vector_size,
+                                                  window_size=self.window_size,
+                                                  min_count=self.min_count,
+                                                  sampling_threshold=self.sampling_threshold,
+                                                  negative_size=self.negative_size,
+                                                  train_epoch=self.train_epoch,
+                                                  dm=self.dm,
+                                                  worker_count=self.worker_count)
 
-        for index, datapoint in train.iterrows():
-            tokenized_words = re.findall(self.w, datapoint[X].lower())
-        labeled_sentences.append(TaggedDocument(words=tokenized_words, tags=[datapoint[i] for i in df_tags]))
+            model.build_vocab(labeled_sentences)
+            model.train(labeled_sentences, total_examples=model.corpus_count, epochs=model.epochs)
+            self.model = model
 
-        model = gensim.models.doc2vec.Doc2Vec(vector_size=self.vector_size,
-                                              window_size=self.window_size,
-                                              min_count=self.min_count,
-                                              sampling_threshold=self.sampling_threshold,
-                                              negative_size=self.negative_size,
-                                              train_epoch=self.train_epoch,
-                                              dm=self.dm,
-                                              worker_count=self.worker_count)
-
-        model.build_vocab(labeled_sentences)
-        model.train(labeled_sentences, total_examples=model.corpus_count, epochs=model.epochs)
-        self.model = model
-
-        test['results'] = self.predict(test[X])
-        labelaccuracy = f1_score(test[self.testseries_name], test['results'], average=None)
-        total_label_accuracy = [x + y for x, y in zip(total_label_accuracy, labelaccuracy)]
-        accuracy = accuracy_score(test[self.testseries_name], test['results'])
-        total_accuracy = total_accuracy + accuracy
-
-        print("Accuracy Score: ", total_accuracy / 10)
-
-        total_label_accuracy = [i / 10 for i in total_label_accuracy]
+            test['results'] = self.predict(test[X])
+            labelaccuracy = f1_score(test[self.testseries_name], test['results'], average=None)
+            total_label_accuracy= [x + y for x, y in zip(total_label_accuracy, labelaccuracy)]
+            accuracy = accuracy_score(test[self.testseries_name], test['results'])
+            total_accuracy = total_accuracy + accuracy
+        
+        print("Accuracy Score: ", total_accuracy/iterations)
+        
+        total_label_accuracy = [i/iterations for i in total_label_accuracy]
         print("Label Score: ", total_label_accuracy)
 
         return [total_label_accuracy, accuracy]
+
 
     def predict_taggedtext(self,
                            document):  # takes in a taged document and infers vector and returns whether it is releveant or not (1 or 0)
@@ -135,30 +133,31 @@ class doc2vec:
         for col in self.df_tags:
             tags.append([rec for rec in sims if rec[0] in set(self.df[col].unique())][0][0])
         return tags
-
+    
     def predict_sims(self, document):  # takes in a string and infers vector and returns vectors and distance
         tokenized_words = re.findall(self.w, document.lower())
         inferred_vector = TaggedDocument(words=tokenized_words, tags=["inferred_vector"])[0]
         inferred_vector = self.model.infer_vector(inferred_vector)
         sims = self.model.docvecs.most_similar([inferred_vector], topn=len(self.model.docvecs))
         return sims
-
+    
     def get_vector(self, document):  # takes in a string and infers vector and returns vectors and distance
         tokenized_words = re.findall(self.w, document.lower())
         inferred_vector = TaggedDocument(words=tokenized_words, tags=["inferred_vector"])[0]
         inferred_vector = self.model.infer_vector(inferred_vector)
-        return inferred_vector
+        return sparse.csr_matrix(inferred_vector).toarray()
 
-    def predict_text_main(self, document,
-                          col=None):  # takes in a string and infers vector and returns vectors and distance
+    def predict_text_main(self, document, col=None):  # takes in a string and infers vector and returns vectors and distance
         if col == None:
             col = self.df_tags[0]
         tokenized_words = re.findall(self.w, document.lower())
         inferred_vector = TaggedDocument(words=tokenized_words, tags=["inferred_vector"])[0]
         inferred_vector = self.model.infer_vector(inferred_vector)
         sims = self.model.docvecs.most_similar([inferred_vector], topn=len(self.model.docvecs))
-        #         print([rec for rec in sims if rec[0] in set(self.df[self.df_tags[0]].unique())])
+#         print([rec for rec in sims if rec[0] in set(self.df[self.df_tags[0]].unique())])
         return [rec for rec in sims if rec[0] in set(self.df[col].unique())][0][0]
+
+
 
     def label_sentences(self, df, X, Y):
         # trick for py2/3 compatibility
@@ -190,3 +189,6 @@ class doc2vec:
             return X.progress_apply(self.predict_text_main)
         else:
             return X.apply(self.predict_text_main)
+
+
+
