@@ -10,12 +10,12 @@ from time import sleep
 
 import twitter_creds
 
-NewsList = set()
+news = set()
 non_news = set()
 Found_Users = set()
 
-for newshandle in fileinput.input('NewsList.txt'):
-    NewsList.add(newshandle)
+for newshandle in fileinput.input('news.txt'):
+    news.add(newshandle)
 
 for handle in fileinput.input('non_news_users.txt'):
     non_news.add(handle)
@@ -23,7 +23,7 @@ for handle in fileinput.input('non_news_users.txt'):
 formatted_list1 = []
 formatted_list2 = []
 
-for x in NewsList:
+for x in news:
     x = x.lower()
     x = x.replace('\n', '')
     formatted_list1.append(x)
