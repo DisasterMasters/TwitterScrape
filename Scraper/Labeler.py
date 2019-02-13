@@ -20,10 +20,20 @@ import os
 from tqdm import tqdm
 from sshtunnel import SSHTunnelForwarder
 import pymongo
+import mongo_creds.py
 
 #TODO access users from MongoDb rather than text files
 
-client = MongoClient()
+server = SSHTunnelForwarder(
+    'da2.eecs.utk.edu',
+    ssh_username= mongo_creds.MONGO_USER,
+    ssh_password= mongo_creds.MONGO_PASS,
+    remote_bind_address=('da1.eecs.utk.edu', 27017)
+)
+
+server.start()
+
+client = pymongo.MongoClient('da1.eecs.utk.edu', server.local_bind_port) # server.local_bind_port is assigned local port
 
 user_list = sum((list(client["twitter"][collname].find()) for collname in collection_list), []) #gather all users in mongodb
 
