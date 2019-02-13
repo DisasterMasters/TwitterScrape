@@ -41,11 +41,8 @@ def map_f(username):
 def add_users(users):
     
     client = MongoClient()
-    client = MongoClient('localhost', 27017)
 
-    collection_list = client['twitter'].collection_names() 
-
-    collection_list  = [x for x in collection_list if "User" in x]
+    collection_list  = [x for x in client['twitter'].collection_names() if "User" in x]
     
     def exists(user):
         for collection in (collection_list):

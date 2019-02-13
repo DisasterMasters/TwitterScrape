@@ -18,6 +18,16 @@ from googletrans import Translator
 from nltk.tokenize import TweetTokenizer
 import os
 from tqdm import tqdm
+from sshtunnel import SSHTunnelForwarder
+import pymongo
+
+#TODO access users from MongoDb rather than text files
+
+client = MongoClient()
+
+user_list = sum((list(client["twitter"][collname].find()) for collname in collection_list), []) #gather all users in mongodb
+
+# # # # # # # # #
 
 dirname = os.path.dirname(os.path.abspath(__file__))
 
@@ -37,11 +47,13 @@ def filter(user):
                         return True
     return False
 
+'''
 def tweet_frequency(user, num_tweets):
     oldest_tweet = compare_time(user, num_tweets)
     oldest_tweet = oldest_tweet/24
     freq = num_tweets/oldest_tweet #should be tweets/day
     return freq
+'''
 
 # # # # THIS CLASS IS USED TO DETERMINE CONFIDENCE AND INCREASE CLASSIFICATION RELIABILITY # # # #
 class VoteClassifier(ClassifierI):
@@ -69,6 +81,7 @@ auth = OAuthHandler(twitter_creds.CONSUMER_KEY, twitter_creds.CONSUMER_SECRET)
 auth.set_access_token(twitter_creds.ACCESS_TOKEN, twitter_creds.ACCESS_TOKEN_SECRET)
 api = tweepy.API(auth, wait_on_rate_limit=True)
 
+
 # # # # THIS SAVES A USER SO IT DOESN"T HAVE TO BE FOUND WITH TWEEPY AGAIN # # # #
 def save_object(obj, filename):
     with open(filename, 'wb') as output:  # Overwrites any existing file.
@@ -83,6 +96,7 @@ def recover_object(filename):
         rv = None
     return rv
 # # # #
+
 
 # # # # THIS MAKES A FEATURE SET # # # #
 def find_features(words_to_check):
@@ -115,7 +129,7 @@ for news_user in tqdm(fileinput.input('NewsList.txt')):
         print(user_error)
 
 # # # # KNOWN NON NEWS ACCOUNTS # # # #
-print("GATHERING IRRELEVANT ACCOUNTS\n")
+print("GATHERING NON_NEWS ACCOUNTS\n")
 for non_news_user in tqdm(fileinput.input('non_news_users.txt')):
     non_news_user = non_news_user.lower()
     non_news_user = non_news_user.replace('\n', '')
