@@ -50,6 +50,8 @@ It requires [Scrapy](http://scrapy.org/) and [PyMongo](https://api.mongodb.org/p
 
 4.  In you want to save the data to MongoDB, change the `ITEM_PIPELINES` in `TweetScraper/settings.py` from `TweetScraper.pipelines.SaveToFilePipeline` to `TweetScraper.pipelines.SaveToMongoPipeline`.
 
+5. IMPORTANT! There's no space between date and since or until
+
 ### Other parameters
 * `lang[DEFAULT='']` allow to choose the language of tweet scrapped. This is not part of the query parameters, it is a different part in the search API URL
 * `top_tweet[DEFAULT=False]`, if you want to query only top_tweets or all of them
