@@ -14,6 +14,7 @@ TWITTER_AUTH.set_access_token(
 )
 
 api = tweepy.API(TWITTER_AUTH, parser = tweepy.parsers.JSONParser())
+client = MongoClient()
 
 def map_f(username):
     try:
@@ -22,7 +23,8 @@ def map_f(username):
             tweet_mode = "extended",
             include_entities = True,
             monitor_rate_limit = True,
-            wait_on_rate_limit = True
+            wait_on_rate_limit = True,
+            wait_on_rate_limit_notify = True
         )
         
         retrieved_at = datetime.datetime.utcnow().replace(tzinfo = datetime.timezone.utc)
@@ -39,14 +41,13 @@ def map_f(username):
     return r
 
 def add_users(users):
-    
-    client = MongoClient()
 
     collection_list  = [x for x in client['twitter'].collection_names() if "User" in x]
     
     def exists(user):
-        for collection in (collection_list):
-            for post in client['twitter'][collection].find({"screen_name":user}):  
+        for collection in collection_list:
+            post = client['twitter'][collection].find_one({"screen_name":user})
+            if post is not None:
                 return collection, post
         return 0, 0
     
@@ -54,23 +55,32 @@ def add_users(users):
     for key, value in tqdm(users.items()):
         collection, document = exists(key)
         if document == 0:
-#             while(1):
             new_user = map_f(key)
             print("new user found")
             if new_user != None:
-                new_user['is_journalist'] = value
-                client['twitter']['Users_MiscByCategory'].insert(new_user)
-#                     break
+                new_user['is_journalist'] = "Unknown"
+                new_user['is_government'] = "Unknown"
+                new_user['is_utility'] = value
+                new_user['is_news'] = "Unknown"
+                new_user['is_not_news'] = "Unknown"
+                new_user['is_nonprofit'] = "Unknown"
+                client['twitter']['Users_Labeled'].insert_one(new_user)
             else:
                 print("error adding new user")
         else:
             print("old user found")
-            document['is_journalist'] = value
-            client['twitter'][collection].replace_one({"_id": document["_id"]}, document)
+            document['is_journalist'] = "Unknown"
+            document['is_government'] = "Unknown"
+            document['is_utility'] = value
+            document['is_news'] = "Unknown"
+            document['is_not_news'] = "Unknown"
+            document['is_nonprofit'] = "Unknown"
+            del document['_id']
+            client['twitter']['Users_Labeled'].insert_one(document)
 
 users = {}
 
-f = open("journalists.txt", "r", encoding='utf-8')
+f = open("Irma_Users/Utilities-Irma.txt", "r", encoding='utf-8')
 lines = f.readlines()
 f.close()
 
@@ -78,5 +88,3 @@ for line in lines:
     users[line[:-1]] = True
 
 add_users(users)
-
-

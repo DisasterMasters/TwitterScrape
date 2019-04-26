@@ -19,46 +19,62 @@ from nltk.tokenize import TweetTokenizer
 import os
 from tqdm import tqdm
 from sshtunnel import SSHTunnelForwarder
-import pymongo
-import mongo_creds.py
+from pymongo import MongoClient
+from sklearn.metrics import f1_score
 
-#TODO access users from MongoDb rather than text files
+# # # # TWITTER AUTHORIZATION # # # #
+auth = OAuthHandler(twitter_creds.CONSUMER_KEY, twitter_creds.CONSUMER_SECRET)
+auth.set_access_token(twitter_creds.ACCESS_TOKEN, twitter_creds.ACCESS_TOKEN_SECRET)
+api = tweepy.API(auth, wait_on_rate_limit=True)
 
-server = SSHTunnelForwarder(
-    'da2.eecs.utk.edu',
-    ssh_username= mongo_creds.MONGO_USER,
-    ssh_password= mongo_creds.MONGO_PASS,
-    remote_bind_address=('da1.eecs.utk.edu', 27017)
-)
+#access users from MongoDb rather than text files
 
-server.start()
-
-client = pymongo.MongoClient('da1.eecs.utk.edu', server.local_bind_port) # server.local_bind_port is assigned local port
-
-user_list = sum((list(client["twitter"][collname].find()) for collname in collection_list), []) #gather all users in mongodb
+with SSHTunnelForwarder(
+    ('da2.eecs.utk.edu', 9244),
+    ssh_username= "nwest13",
+    ssh_pkey="~/.ssh/id_rsa.pub",
+    remote_bind_address=('da1.eecs.utk.edu', 27017),
+    local_bind_address=('localhost', 27017)
+) as tunnel:
+    client = MongoClient('localhost', tunnel.local_bind_port) # server.local_bind_port is assigned local port
+    # user_list = sum(list((client["twitter"][collname])) for collname in collection_list), []) #gather all users in mongodb
+    all_users_names = set()
+    all_users = []
+    collection_list = client['twitter'].collection_names()
+    collection_list = [x for x in collection_list if "User" in x]
+    for user_collection in collection_list:
+        for user_object in client['twitter'][user_collection].find():
+            if user_object['screen_name'] in all_users_names:
+                pass
+            else:
+                all_users.append(user_object)
+                all_users_names.add(user_object['screen_name'])
+    print(len(all_users), end='')
+    print(" users in MongoDB")
 
 # # # # # # # # #
 
-dirname = os.path.dirname(os.path.abspath(__file__))
+# dirname = os.path.dirname(os.path.abspath(__file__))
 
-def compare_time(user):
-    tweet_time = parsedate_to_datetime((((api.user_timeline((user._json)['screen_name'], count=1))[0])._json)['created_at'])
-    current_time = datetime.datetime.now(datetime.timezone.utc)
-    difference = (current_time - tweet_time)
-    difference = difference.total_seconds()
-    difference = difference/3600
-    return difference
-
+'''
 # # # # THIS HELPS DETERMINE A NEWS ACCOUNT # # # #
 def filter(user):
     if(user._json)['protected'] is False:
         if((user._json)['followers_count'] > 700) and ((user._json)['verified'] is True):
             if(user._json)['url'] is not None:
-                        return True
+                    return True
     return False
+'''
 
 '''
 def tweet_frequency(user, num_tweets):
+    def compare_time(user):
+        tweet_time = parsedate_to_datetime((((api.user_timeline((user._json)['screen_name'], count=1))[0])._json)['created_at'])
+        current_time = datetime.datetime.now(datetime.timezone.utc)
+        difference = (current_time - tweet_time)
+        difference = difference.total_seconds()
+        difference = difference/3600
+        return difference
     oldest_tweet = compare_time(user, num_tweets)
     oldest_tweet = oldest_tweet/24
     freq = num_tweets/oldest_tweet #should be tweets/day
@@ -86,28 +102,6 @@ class VoteClassifier(ClassifierI):
         conf = choice_votes / len(votes)
         return conf
 
-# # # # TWITTER AUTHORIZATION # # # #
-auth = OAuthHandler(twitter_creds.CONSUMER_KEY, twitter_creds.CONSUMER_SECRET)
-auth.set_access_token(twitter_creds.ACCESS_TOKEN, twitter_creds.ACCESS_TOKEN_SECRET)
-api = tweepy.API(auth, wait_on_rate_limit=True)
-
-
-# # # # THIS SAVES A USER SO IT DOESN"T HAVE TO BE FOUND WITH TWEEPY AGAIN # # # #
-def save_object(obj, filename):
-    with open(filename, 'wb') as output:  # Overwrites any existing file.
-        pickle.dump(obj, output)
-
-def recover_object(filename):
-    try:
-        with open(filename, 'rb') as input:
-            rv = pickle.load(input)
-    except FileNotFoundError as e:
-        #print(e)
-        rv = None
-    return rv
-# # # #
-
-
 # # # # THIS MAKES A FEATURE SET # # # #
 def find_features(words_to_check):
     check_words = set(words_to_check)
@@ -116,52 +110,31 @@ def find_features(words_to_check):
         features[w[0]] = (w[0] in check_words)
     return features
 
-
 labeled_users = dict()
 #test_dict = dict()
 
-# # # # KNOWN NEWS ACCOUNTS # # # #
-print("GATHERING NEWS ACCOUNTS\n")
-for news_user in tqdm(fileinput.input('NewsList.txt')):
-    news_user = news_user.lower()
-    news_user = news_user.replace('\n', '')
-    try:
-        user_error = news_user
-        obj = recover_object(dirname + '/SAVED_USER_OBJECTS/' + news_user + '.pickle')
-        if obj is None:
-            news_user = api.get_user(news_user)
-            save_object(news_user, dirname + '/SAVED_USER_OBJECTS/' + (news_user._json)['screen_name'] + '.pickle')
-            labeled_users[news_user] = 'news'
-        else:
-            labeled_users[obj] = 'news'
-    except tweepy.error.TweepError as e:
-        print(e, end='')
-        print(user_error)
+# # # # KNOWN ACCOUNTS # # # #
+print("FILLING LABELED USERS DICTIONARY")
+for user in all_users:
+    if "is_news" in user and user['is_news'] is True:
+        labeled_users[(user['screen_name'], user['description'])] = "is_news"
+    if "is_not_news" in user and user["is_not_news"] is True:
+        labeled_users[(user['screen_name'], user['description'])] = "is_not_news"
+    if "is_journalist" in user and user["is_journalist"] is True:
+        labeled_users[(user['screen_name'], user['description'])] = "is_journalist"
+    if "is_government" in user and user["is_government"] is True:
+        labeled_users[(user['screen_name'], user['description'])] = "is_government"
+    if "is_utility" in user and user["is_utility"] is True:
+        labeled_users[(user['screen_name'], user['description'])] = "is_utility"
+    if "is_nonprofit" in user and user["is_nonprofit"] is True:
+        labeled_users[(user['screen_name'], user['description'])] = "is_nonprofit"
 
-# # # # KNOWN NON NEWS ACCOUNTS # # # #
-print("GATHERING NON_NEWS ACCOUNTS\n")
-for non_news_user in tqdm(fileinput.input('non_news_users.txt')):
-    non_news_user = non_news_user.lower()
-    non_news_user = non_news_user.replace('\n', '')
-    try:
-        user_error = non_news_user
-        obj = recover_object(dirname + '/SAVED_USER_OBJECTS/' + non_news_user + '.pickle')
-        if obj is None:
-            non_news_user = api.get_user(non_news_user)
-            save_object(non_news_user, dirname + '/SAVED_USER_OBJECTS/' + (non_news_user._json)['screen_name'] + '.pickle')
-            labeled_users[non_news_user] = 'non'
-        else:
-            labeled_users[obj] = 'non'
-    except tweepy.error.TweepError as e:
-        print(e, end='')
-        print(user_error)
-
-# # # # FINDING MOST COMMON WORDS # # # #
+# # # # FINDING WORDS IN BIOS # # # #
 all_words = []
 tknzr = TweetTokenizer()
 print("MAKING FREQUENCY DISTRIBUTION FROM USERS BIOS\n")
-for user_object in tqdm(labeled_users.keys()):
-    bio = (user_object._json)['description']
+for user in tqdm(labeled_users.keys()):
+    bio = user[1]
     if (bio is not None) or (len(bio) is not 0):
         #print(bio, '\n')
         bio = tknzr.tokenize(bio)
@@ -174,8 +147,8 @@ all_words = nltk.FreqDist(all_words)
 top_words = [w for w in all_words.most_common(100)]
 featuresets = []
 print("MAKING FEATURE SETS\n")
-for user_object, category in tqdm(labeled_users.items()):
-    bio = (user_object._json)['description']
+for user, category in tqdm(labeled_users.items()):
+    bio = user[1]
     if (bio is not None) or (len(bio) is not 0):
         bio = tknzr.tokenize(bio)
         featuresets.append((find_features(bio), category))
@@ -224,6 +197,7 @@ voted_classifier = VoteClassifier(classifier, BernoulliNB_classifier, LinearSVC_
 #print('Voted classifier accuracy:', (nltk.classify.accuracy(voted_classifier, testing_set))*100)
 
 # # # # FOUND ACCOUNTS WITH STREAMING API # # # #
+'''
 try:
     translator = Translator()
 except Exception as e:
@@ -231,16 +205,8 @@ except Exception as e:
 f = open('Labeled_Users_from_API.txt', 'w')
 print("LABELING USERS FROM STREAMING API\n")
 for found_user in tqdm(fileinput.input('Users_Found_by_API.txt')):
-    found_user = found_user.lower()
-    found_user = found_user.replace('\n', '')
     try:
         user_error = found_user
-        obj = recover_object(dirname + '/SAVED_USER_OBJECTS/' + found_user + '.pickle')
-        if obj is None:
-            found_user = api.get_user(found_user)
-            save_object(found_user, dirname + '/SAVED_USER_OBJECTS/' + (found_user._json)['screen_name'] + '.pickle')
-        else:
-            found_user = obj
         bio = (found_user._json)['description']
         if (bio is not None) or (len(bio) is not 0):
             try:
@@ -274,3 +240,4 @@ for found_user in tqdm(fileinput.input('Users_Found_by_API.txt')):
     except tweepy.error.TweepError as e:
         print(e, end=' ')
         print(user_error)
+'''
