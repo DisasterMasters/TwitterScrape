@@ -1,0 +1,9 @@
+#!/bin/bash
+
+filename=FL_Media_relevant_tweets.txt
+all_lines=`cat $filename`
+cd /home/jmcmicha/TwitterScrape/Scraper
+for item in $all_lines;
+do
+	scrapy crawl TweetScraper -a query="@ $item, since:2017-09-01, until:2017-09-30";
+done

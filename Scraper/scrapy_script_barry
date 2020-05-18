@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cd /home/jmcmicha/TwitterScrape/Scraper
+
+scrapy crawl TweetScraper -a query='hurricane OR "hurricane barry" OR #barry OR #hurricanebarry OR "hurricane relief" OR #hurricanerelief OR #hurricanevictims OR "hurricane victims" OR "hurricane season" OR #hurricaneseason OR #hurricane OR "tropical storm" OR "tropical depression", since:2019-07-04, until:2019-07-22';

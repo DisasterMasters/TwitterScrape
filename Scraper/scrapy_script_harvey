@@ -1,0 +1,6 @@
+#!/bin/bash
+
+cd /home/jmcmicha/TwitterScrape/Scraper
+#scrapy crawl TweetScraper -a query="#harvey, #hurricaneharvey, #hurricaneharvery, #hurricanerelief, #hurricanevictims, #victims, #hurricaneseason, #disaster, #relief, #rain, #hurricane, harvey OR Harvey OR hurricane OR Hurricane, since:2017-08-10, until:2017-12-31";
+
+scrapy crawl TweetScraper -a query="hurricane OR #harvey OR #hurricaneharvey OR #hurricanerelief OR #hurricanevictims OR #victims OR #hurricaneseason OR #disaster OR #relief OR #rain OR #hurricane, since:2017-08-10, until:2017-12-31";
